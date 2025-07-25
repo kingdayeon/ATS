@@ -1,3 +1,68 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hide scrollbar globally */
+html {
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Custom checkbox styles to ensure black color */
+input[type="checkbox"] {
+  accent-color: #000000;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+input[type="checkbox"]:focus {
+  ring-color: #000000;
+  border-color: #000000;
+}
+
+/* Radio button styles to match */
+input[type="radio"] {
+  accent-color: #000000;
+}
+
+input[type="radio"]:checked {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+/* Remove focus outline and borders from radio buttons */
+input[type="radio"]:focus {
+  outline: none;
+  ring: none;
+  box-shadow: none;
+  border-color: #d1d5db; /* gray-300 */
+}
+
+input[type="radio"]:focus-visible {
+  outline: none;
+  ring: none;
+  box-shadow: none;
+}
+
+input[type="radio"]:active {
+  outline: none;
+  ring: none;
+  box-shadow: none;
+}
