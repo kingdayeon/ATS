@@ -1,34 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+    <div className="h-screen w-screen bg-black flex items-center justify-center">
+      <div className="bg-white rounded-xl shadow-2xl p-12 max-w-md w-full text-center">
+        <h1 className="text-4xl font-bold text-blue-600 mb-4 underline decoration-wavy decoration-pink-500">
+          Hello, Tailwind CSS! 🎨
+        </h1>
+        <p className="text-gray-700 text-lg mb-6">
+          Tailwind CSS가 정상적으로 작동하고 있다면 이 카드가 예쁘게 스타일링되어 보일 거예요!
         </p>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 shadow-lg hover:shadow-xl">
+          테스트 버튼
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 
