@@ -8,7 +8,7 @@ import { RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import FileUpload from "@/components/FileUpload";
-import { jobDetailData } from "@/data/mockJobs";
+import { useJob } from "@/hooks/useJob";
 import type { ApplicationFormData, ReferralSource } from "@/types";
 import { REFERRAL_OPTIONS } from "@/types";
 
@@ -17,9 +17,8 @@ const JobApplication = () => {
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Get job details based on ID
-  const jobId = parseInt(id || "1");
-  const job = jobDetailData[jobId] || jobDetailData[1];
+  // Get job details using custom hook
+  const job = useJob();
 
   const [formData, setFormData] = useState<ApplicationFormData>({
     name: "",

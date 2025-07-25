@@ -1,19 +1,16 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
-import { jobDetailData } from "@/data/mockJobs";
+import { useJob } from "@/hooks/useJob";
 import type { Job } from "@/types";
 
 const JobDetail = () => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  const jobId = parseInt(id || "1");
-  const job: Job = jobDetailData[jobId] || jobDetailData[1];
+  const job: Job = useJob();
 
   const handleApply = () => {
-    navigate(`/apply/${jobId}`);
+    navigate(`/apply/${job.id}`);
   };
 
   return (

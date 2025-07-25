@@ -1,6 +1,6 @@
 import type { Job, MockJobData } from "@/types";
 
-// Mock job listings data
+// Mock job listings data - only essential info for list view
 export const jobListings: Job[] = [
   {
     id: 1,
@@ -9,15 +9,7 @@ export const jobListings: Job[] = [
     department: "Backend Engineer",
     experience: "경력 7년 이상",
     type: "정규직",
-    location: "무신사 오피스 성수",
-    description: "29CM은 고객의 라이프 스타일에 어울리는 최적의 상품을 발견하고 소개하는 온/오프라인 셀렉트샵입니다. 2011년, '고객의 더 나은 선택을 돕는다'라는 미션으로부터 출발한 후, 2024년 거래액 1조를 돌파했으며, 매년 두 자릿수의 성장률을 지속하며 고속 성장 중입니다.",
-    teamIntro: "29CM에 Customer Engagement Engineering 실에는 Search & Discovery 팀과 Campaign & Content 팀이 있으며, 고객이 29CM 가치를 발견하고 탐색할 수 있는 경험을 제공하는 핵심 조직입니다.",
-    responsibilities: [
-      "전반적인 전시/콘텐츠 영역을 책임지며, 대규모 트래픽을 안정적으로 처리하고 고객에게 최적의 콘텐츠를 제공합니다.",
-      "고객의 발견 경험을 구성하는 설득하기, 즐기기, 채워넣기, 레어 등의 기능을 설계하고 개발합니다.",
-      "고객이 상품을 찾고 발견하는 탐색 여정을 돕기 위해 프론트엔드와 모바일이 최적화된 BFF API를 개발합니다."
-    ],
-    requirements: "7년 이상의 개발 경험이 있으신 분 혹은 그에 준하는 역량을 갖추신 분"
+    location: "무신사 오피스 성수"
   },
   {
     id: 2,
@@ -84,7 +76,7 @@ export const jobListings: Job[] = [
   }
 ];
 
-// Mock job detail data (for job detail page)
+// Mock job detail data - complete info for detail view
 export const jobDetailData: MockJobData = {
   1: {
     id: 1,
