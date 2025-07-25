@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import Header from "@/components/Header";
 import FileUpload from "@/components/FileUpload";
 import { useJob } from "@/hooks/useJob";
+import { submitApplication, uploadFile } from "@/services/api";
 import type { ApplicationFormData, ReferralSource } from "@/types";
 import { REFERRAL_OPTIONS } from "@/types";
 
@@ -82,14 +83,36 @@ const JobApplication = () => {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    // TODO: API call to submit application
-    console.log("Submitting application:", formData);
-    setIsSubmitted(true);
+    try {
+      const jobId = parseInt(id || "1");
+      
+      // 지원서 제출
+      const result = await submitApplication(jobId, formData);
+      
+      if (result.success && result.applicationId) {
+        // 파일 업로드 (선택사항)
+        if (formData.resumeFile) {
+          await uploadFile(formData.resumeFile, 'resumes', result.applicationId);
+        }
+        
+        if (formData.portfolioFile && formData.portfolioType === 'file') {
+          await uploadFile(formData.portfolioFile, 'portfolios', result.applicationId);
+        }
+        
+        console.log("Application submitted successfully!");
+        setIsSubmitted(true);
+      } else {
+        alert(`지원서 제출에 실패했습니다: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to submit application:", error);
+      alert("지원서 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   if (isSubmitted) {

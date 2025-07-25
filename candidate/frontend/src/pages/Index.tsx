@@ -1,16 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, X, ChevronUp } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import CheckboxFilter from "@/components/CheckboxFilter";
-import { jobListings } from "@/data/mockJobs";
-import type { CompanyType, JobListFilters } from "@/types";
+import { getJobs } from "@/services/api";
+import type { CompanyType, JobListFilters, Job } from "@/types";
 import { COMPANIES, DEPARTMENTS } from "@/types";
 
 const Index = () => {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<JobListFilters>({
     searchQuery: "",
     selectedCompanies: [],
@@ -21,8 +22,24 @@ const Index = () => {
   const [isDepartmentExpanded, setIsDepartmentExpanded] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
+  // API에서 채용공고 데이터 가져오기
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const jobsData = await getJobs();
+        setJobs(jobsData);
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
   const filteredJobs = useMemo(() => {
-    return jobListings.filter(job => {
+    return jobs.filter((job: Job) => {
       const matchesSearch = job.title.toLowerCase().includes(filters.searchQuery.toLowerCase());
       const matchesCompany = filters.selectedCompanies.length === 0 ||
         filters.selectedCompanies.includes(job.company);
@@ -31,7 +48,7 @@ const Index = () => {
 
       return matchesSearch && matchesCompany && matchesDepartment;
     });
-  }, [filters.searchQuery, filters.selectedCompanies, filters.selectedDepartments]);
+  }, [jobs, filters.searchQuery, filters.selectedCompanies, filters.selectedDepartments]);
 
   const handleSearchChange = (query: string) => {
     setFilters(prev => ({ ...prev, searchQuery: query }));
@@ -68,7 +85,6 @@ const Index = () => {
 
   // Shared styles with Tailwind CSS classes
   const cardStyles = "block border border-gray-200 rounded-lg p-4 md:p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200";
-  const badgeStyles = "text-gray-600 bg-gray-100 text-xs md:text-sm";
   const buttonPrimaryStyles = "bg-black text-white hover:bg-gray-800";
 
   return (
@@ -136,22 +152,24 @@ const Index = () => {
 
             {/* Job Listings */}
             <div className="space-y-4 md:space-y-6">
-              {filteredJobs.map((job) => (
-                <article key={job.id}>
-                  <Link to={`/job/${job.id}`} className={cardStyles}>
-                    <h3 className="text-lg md:text-xl font-bold text-black mb-3 md:mb-4 hover:text-gray-800 transition-colors">
-                      {job.title}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {[job.company, job.department, job.experience, job.type, job.location].map((item, index) => (
-                        <Badge key={index} variant="secondary" className={badgeStyles}>
-                          {item}
-                        </Badge>
-                      ))}
-                    </div>
-                  </Link>
-                </article>
-              ))}
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">채용공고를 불러오는 중...</p>
+                </div>
+              ) : (
+                filteredJobs.map((job: Job) => (
+                  <article key={job.id}>
+                    <Link to={`/job/${job.id}`} className={cardStyles}>
+                      <h3 className="text-lg md:text-xl font-bold text-black mb-3 md:mb-4 hover:text-gray-800 transition-colors">
+                        {job.title}
+                      </h3>
+                      <div className="text-gray-600 text-sm md:text-base">
+                        {[job.company, job.department, job.experience, job.type, job.location].join(' | ')}
+                      </div>
+                    </Link>
+                  </article>
+                ))
+              )}
             </div>
 
             {/* No Results */}

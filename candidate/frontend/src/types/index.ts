@@ -1,7 +1,7 @@
 // ===== COMMON TYPES =====
 export type JobType = "정규직" | "계약직" | "인턴" | "파트타임";
 export type ExperienceLevel = "신입" | "경력 1년 이상" | "경력 3년 이상" | "경력 5년 이상" | "경력 7년 이상" | "경력 8년 이상" | "경력 10년 이상";
-export type CompanyType = "29CM" | "무신사" | "무신사 스튜디오" | "무신사 로지스틱스" | "무신사 페이먼츠";
+export type CompanyType = "29CM" | "무신사" | "무신사 스탠다드" | "무신사 로지스틱스" | "무신사 페이먼츠";
 
 // ===== JOB RELATED TYPES =====
 export interface Job {
@@ -85,7 +85,7 @@ export interface CheckboxFilterProps {
 export const COMPANIES: CompanyType[] = [
   "29CM",
   "무신사", 
-  "무신사 스튜디오",
+  "무신사 스탠다드",
   "무신사 로지스틱스",
   "무신사 페이먼츠"
 ];
@@ -106,7 +106,9 @@ export const DEPARTMENTS = [
   "Mobile Engineer",
   "Off-Line",
   "Operation Management",
-  "Product"
+  "Product",
+  "Product Designer",
+  "Product Manager"
 ];
 
 export const REFERRAL_OPTIONS: ReferralSource[] = [
