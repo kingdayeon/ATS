@@ -74,12 +74,11 @@ const StatusColumn = ({
 
   return (
     <div 
-      className={`flex flex-col bg-white rounded-lg border shadow-sm transition-all duration-200 ${
+      className={`flex flex-col bg-white rounded-lg border shadow-sm transition-all duration-200 h-auto lg:h-[calc(100vh-220px)] ${
         isDragOver 
           ? 'border-blue-400 bg-blue-50 border-2' 
           : 'border-gray-200'
       }`} 
-      style={{ height: 'calc(100vh - 220px)' }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -100,7 +99,7 @@ const StatusColumn = ({
       </div>
       
       {/* 카드 리스트 - 숨겨진 스크롤 */}
-      <div className="p-4 pt-3 pb-4 space-y-3 overflow-y-auto scrollbar-hide" style={{ height: 'calc(100vh - 300px)' }}>
+      <div className="p-4 pt-3 pb-4 space-y-3 overflow-y-auto scrollbar-hide h-auto lg:h-[calc(100vh-300px)]">
         {items.length > 0 ? (
           items.map((application) => (
             <ApplicationCard

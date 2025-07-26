@@ -7,13 +7,28 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* 전체 페이지 스크롤 방지 */
+  overflow: hidden; /* 데스크톱에서는 전체 페이지 스크롤 방지 */
+  overflow-x: hidden; /* 가로 스크롤 항상 숨김 */
 }
 
 /* 루트 컨테이너 높이 고정 */
 #root {
   height: 100vh;
   overflow: hidden;
+}
+
+/* 📱 모바일/태블릿에서는 스크롤 허용 */
+@media (max-width: 1024px) {
+  body {
+    overflow-y: auto;
+    overflow-x: hidden; /* 모바일에서도 가로 스크롤 숨김 */
+  }
+  
+  #root {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden; /* 루트에서도 가로 스크롤 숨김 */
+  }
 }
 
 /* React-PDF 스타일 */

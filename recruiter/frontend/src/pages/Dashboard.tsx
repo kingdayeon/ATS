@@ -179,7 +179,7 @@ const Dashboard = () => {
   const selectedJob = getSelectedJob();
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-gray-50 flex flex-col lg:overflow-hidden">
       {/* 헤더 */}
       <DashboardHeader
         user={user!}
@@ -190,14 +190,11 @@ const Dashboard = () => {
       />
 
       {/* 대시보드 */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full flex flex-col min-h-0">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col lg:min-h-0">
         {selectedJob && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDepartmentColor(selectedJob.department)}`}>
-                {selectedJob.department}
-              </span>
             </div>
             <p className="text-gray-600">
               {selectedJob.company} · {selectedJob.experience} · {selectedJob.location}
@@ -205,7 +202,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 lg:flex-1 lg:min-h-0 pb-4">
           <StatusColumn 
             title="지원 접수" 
             items={dashboardData.submitted}

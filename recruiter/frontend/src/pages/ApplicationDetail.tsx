@@ -205,9 +205,9 @@ const ApplicationDetail = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* 왼쪽: 지원자 정보 */}
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             {/* 프로필 헤더 */}
             <div className="mb-6">
@@ -315,7 +315,7 @@ const ApplicationDetail = () => {
         </div>
 
         {/* 오른쪽: PDF 뷰어 */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* 탭 헤더 */}
             <div className="border-b border-gray-200">
