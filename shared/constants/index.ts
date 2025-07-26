@@ -66,7 +66,6 @@ export const DEPARTMENT_COLORS: Record<string, string> = {
 
 export const STATUS_COLORS: Record<string, string> = {
   'submitted': 'bg-blue-50 border-blue-200',
-  'reviewing': 'bg-yellow-50 border-yellow-200', 
   'interview': 'bg-purple-50 border-purple-200',
   'accepted': 'bg-green-50 border-green-200',
   'rejected': 'bg-red-50 border-red-200'
@@ -80,7 +79,6 @@ export const AVATAR_COLORS = [
 // ===== APPLICATION STATUS MAPPING =====
 export const STATUS_DISPLAY_NAMES: Record<string, string> = {
   'submitted': '지원 접수',
-  'reviewing': '서류 검토',
   'interview': '면접 진행',
   'accepted': '최종 합격',
   'rejected': '불합격'

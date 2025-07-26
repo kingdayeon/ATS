@@ -5,6 +5,7 @@ import type { Job, Application } from '../../../../shared/types';
 import DashboardHeader from '../components/ui/DashboardHeader';
 import StatusColumn from '../components/ui/StatusColumn';
 import { getDepartmentColor } from '../../../../shared/utils';
+import { sendStatusChangeEmail } from '../../../../shared/services/email';
 
 interface ApplicationWithJob extends Application {
   job?: Job;
@@ -12,7 +13,6 @@ interface ApplicationWithJob extends Application {
 
 interface DashboardStats {
   submitted: ApplicationWithJob[];
-  reviewing: ApplicationWithJob[];
   interview: ApplicationWithJob[];
   accepted: ApplicationWithJob[];
 }
@@ -21,7 +21,6 @@ const Dashboard = () => {
   const { user, canAccessJob, logout } = useAuthStore();
   const [dashboardData, setDashboardData] = useState<DashboardStats>({
     submitted: [],
-    reviewing: [],
     interview: [],
     accepted: []
   });
@@ -67,7 +66,6 @@ const Dashboard = () => {
       // 상태별로 분류
       const stats: DashboardStats = {
         submitted: applications?.filter(app => app.status === 'submitted') || [],
-        reviewing: applications?.filter(app => app.status === 'reviewing') || [],
         interview: applications?.filter(app => app.status === 'interview') || [],
         accepted: applications?.filter(app => app.status === 'accepted') || []
       };
@@ -110,7 +108,26 @@ const Dashboard = () => {
     try {
       console.log(`지원자 ID ${applicationId}의 상태를 ${newStatus}로 변경`);
       
-      // TODO: 실제 API 호출로 상태 업데이트
+      // 먼저 지원자 정보 가져오기 (이메일 발송용)
+      const { data: applicationData, error: fetchError } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          jobs (
+            title,
+            company
+          )
+        `)
+        .eq('id', applicationId)
+        .single();
+
+      if (fetchError) {
+        console.error('지원자 정보 조회 오류:', fetchError);
+        alert('지원자 정보 조회에 실패했습니다.');
+        return;
+      }
+      
+      // 상태 업데이트
       const { error } = await supabase
         .from('applications')
         .update({ status: newStatus })
@@ -125,6 +142,22 @@ const Dashboard = () => {
       // 성공 시 데이터 새로고침
       await fetchApplicationsForJob(selectedJobId!);
       console.log('✅ 상태 변경 완료!');
+
+      // 📧 이메일 발송 (백그라운드)
+      try {
+        await sendStatusChangeEmail({
+          applicantName: applicationData.name, // ✅ full_name → name 수정
+          applicantEmail: applicationData.email,
+          jobTitle: applicationData.jobs?.title || '채용공고',
+          company: applicationData.jobs?.company || '무신사',
+          newStatus: newStatus,
+          applicationId: applicationId
+        });
+        console.log('📧 상태 변경 이메일 발송 완료!');
+      } catch (emailError) {
+        console.error('⚠️ 이메일 발송 실패 (상태 변경은 완료됨):', emailError);
+        // 이메일 발송 실패해도 상태 변경은 완료된 상태이므로 에러로 처리하지 않음
+      }
       
     } catch (error) {
       console.error('상태 변경 실패:', error);
@@ -172,7 +205,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 pb-4">
           <StatusColumn 
             title="지원 접수" 
             items={dashboardData.submitted}
@@ -181,15 +214,6 @@ const Dashboard = () => {
             onApplicationMenuClick={handleApplicationMenuClick}
             onStatusChange={handleStatusChange}
             statusKey="submitted"
-          />
-          <StatusColumn 
-            title="서류 전형" 
-            items={dashboardData.reviewing}
-            emptyText="서류 검토 중인 지원자가 없습니다"
-            selectedJob={selectedJob}
-            onApplicationMenuClick={handleApplicationMenuClick}
-            onStatusChange={handleStatusChange}
-            statusKey="reviewing"
           />
           <StatusColumn 
             title="면접 진행" 

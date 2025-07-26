@@ -50,6 +50,20 @@ const StatusColumn = ({
       if (currentStatus === statusKey) {
         return;
       }
+
+      // 드래그 방향 제한: 순방향만 허용
+      const statusOrder = ['submitted', 'interview', 'accepted'];
+      const currentIndex = statusOrder.indexOf(currentStatus);
+      const targetIndex = statusOrder.indexOf(statusKey);
+      
+      // rejected는 어느 단계에서든 이동 가능
+      if (statusKey !== 'rejected') {
+        // 역방향 이동 방지 (현재 > 타겟)
+        if (currentIndex >= targetIndex) {
+          console.log(`역방향 이동 불가: ${currentStatus} -> ${statusKey}`);
+          return;
+        }
+      }
       
       console.log(`지원자 ${dragData.name}를 ${statusKey}로 이동`);
       onStatusChange?.(id, statusKey);
