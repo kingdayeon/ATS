@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
+import ApplicationDetail from './pages/ApplicationDetail';
 
 function App() {
   const { user, isLoading, isAuthenticated, login, setLoading } = useAuthStore();
@@ -69,6 +70,7 @@ function App() {
         {isAuthenticated ? (
           <>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/application/:id" element={<ApplicationDetail />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </>

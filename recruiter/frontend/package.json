@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-pdf-viewer/core": "^3.12.0",
+    "@react-pdf-viewer/default-layout": "^3.12.0",
     "@supabase/supabase-js": "^2.52.1",
     "@tanstack/react-query": "^5.83.0",
     "clsx": "^2.1.1",

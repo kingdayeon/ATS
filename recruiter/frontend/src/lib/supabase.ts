@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+// 🔄 DEPRECATED: Supabase 설정이 ../../../../shared/lib/supabase로 이동되었습니다.
+// 하위 호환성을 위해 re-export하지만, 새 코드에서는 shared/lib/supabase를 직접 사용하세요.
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey); 
+export * from '../../../../shared/lib/supabase'; 

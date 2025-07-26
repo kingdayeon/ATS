@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import FileUpload from "@/components/FileUpload";
 import { useJob } from "@/hooks/useJob";
 import { submitApplication, uploadFile } from "@/services/api";
+import { supabase } from "@/lib/supabase";
 import type { ApplicationFormData, ReferralSource } from "@/types";
 import { REFERRAL_OPTIONS } from "@/types";
 
@@ -95,13 +96,37 @@ const JobApplication = () => {
       const result = await submitApplication(jobId, formData);
       
       if (result.success && result.applicationId) {
+        let resumeUrl = null;
+        let portfolioUrl = null;
+        
         // 파일 업로드 (선택사항)
         if (formData.resumeFile) {
-          await uploadFile(formData.resumeFile, 'resumes', result.applicationId);
+          const resumeResult = await uploadFile(formData.resumeFile, 'resumes', result.applicationId);
+          if (resumeResult.success) {
+            resumeUrl = resumeResult.url;
+          }
         }
         
         if (formData.portfolioFile && formData.portfolioType === 'file') {
-          await uploadFile(formData.portfolioFile, 'portfolios', result.applicationId);
+          const portfolioResult = await uploadFile(formData.portfolioFile, 'portfolios', result.applicationId);
+          if (portfolioResult.success) {
+            portfolioUrl = portfolioResult.url;
+          }
+        }
+        
+        // DB에 파일 URL 업데이트
+        if (resumeUrl || portfolioUrl) {
+          const { error: updateError } = await supabase
+            .from('applications')
+            .update({
+              resume_file_url: resumeUrl,
+              portfolio_file_url: portfolioUrl
+            })
+            .eq('id', result.applicationId);
+            
+          if (updateError) {
+            console.error('Error updating file URLs:', updateError);
+          }
         }
         
         console.log("Application submitted successfully!");

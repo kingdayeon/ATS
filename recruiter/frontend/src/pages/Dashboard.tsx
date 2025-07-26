@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import type { Job, Application, JobWithStats } from '../../../../shared/types';
+import type { Job, Application } from '../../../../shared/types';
+import DashboardHeader from '../components/ui/DashboardHeader';
+import StatusColumn from '../components/ui/StatusColumn';
+import { getDepartmentColor } from '../utils/colorUtils';
+
+interface ApplicationWithJob extends Application {
+  job?: Job;
+}
 
 interface DashboardStats {
-  submitted: JobWithStats[];
-  reviewing: JobWithStats[];
-  interview: JobWithStats[];
-  approved: JobWithStats[];
+  submitted: ApplicationWithJob[];
+  reviewing: ApplicationWithJob[];
+  interview: ApplicationWithJob[];
+  accepted: ApplicationWithJob[];
 }
 
 const Dashboard = () => {
@@ -16,183 +23,89 @@ const Dashboard = () => {
     submitted: [],
     reviewing: [],
     interview: [],
-    approved: []
+    accepted: []
   });
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState('전체');
 
-  // 권한별 필터 옵션
-  const getFilterOptions = () => {
-    if (!user) return ['전체'];
-    
-    if (user.role === 'admin') {
-      return ['전체', 'Backend Engineer', 'Frontend Engineer', 'Mobile Engineer', 'Design', 'Product Designer'];
-    }
-    
-    if (user.department === 'dev') {
-      return ['전체', 'Backend Engineer', 'Frontend Engineer', 'Mobile Engineer', 'Engineering Manager'];
-    }
-    
-    if (user.department === 'design') {
-      return ['전체', 'Design', 'Product Designer'];
-    }
-    
-    return ['전체'];
-  };
-
-  const fetchDashboardData = async () => {
+  // 권한에 따른 채용공고 목록 가져오기
+  const fetchJobs = async () => {
     try {
-      setIsLoading(true);
-
-      // 1. 모든 채용공고 가져오기
-      const { data: jobs, error: jobsError } = await supabase
+      const { data: allJobs, error } = await supabase
         .from('jobs')
         .select('*')
         .eq('is_active', true);
 
-      if (jobsError) throw jobsError;
+      if (error) throw error;
 
-      // 2. 모든 지원서 가져오기
-      const { data: applications, error: applicationsError } = await supabase
-        .from('applications')
-        .select('*');
-
-      if (applicationsError) throw applicationsError;
-
-      // 3. 권한에 따라 필터링된 채용공고만 처리
-      const filteredJobs = jobs?.filter(job => canAccessJob(job.department)) || [];
+      // 권한에 따라 필터링
+      const filteredJobs = allJobs?.filter(job => canAccessJob(job.department)) || [];
+      setJobs(filteredJobs);
       
-      // 4. 선택된 필터 적용
-      const finalJobs = selectedFilter === '전체' 
-        ? filteredJobs 
-        : filteredJobs.filter(job => job.department === selectedFilter);
+      // 첫 번째 채용공고를 기본 선택
+      if (filteredJobs.length > 0 && !selectedJobId) {
+        setSelectedJobId(filteredJobs[0].id);
+      }
+    } catch (error) {
+      console.error('채용공고 로딩 실패:', error);
+    }
+  };
 
-      // 5. 채용공고별 지원자 데이터 조합
-      const jobsWithStats: JobWithStats[] = finalJobs.map(job => {
-        const jobApplications = applications?.filter(app => app.job_id === job.id) || [];
-        return {
-          job,
-          applicationCount: jobApplications.length,
-          applications: jobApplications
-        };
-      });
+  // 선택된 채용공고의 지원자 데이터 가져오기
+  const fetchApplicationsForJob = async (jobId: number) => {
+    try {
+      setIsLoading(true);
 
-      // 6. 상태별로 분류
+      const { data: applications, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('job_id', jobId);
+
+      if (error) throw error;
+
+      // 상태별로 분류
       const stats: DashboardStats = {
-        submitted: [],
-        reviewing: [],
-        interview: [],
-        approved: []
+        submitted: applications?.filter(app => app.status === 'submitted') || [],
+        reviewing: applications?.filter(app => app.status === 'reviewing') || [],
+        interview: applications?.filter(app => app.status === 'interview') || [],
+        accepted: applications?.filter(app => app.status === 'accepted') || []
       };
-
-      jobsWithStats.forEach(jobWithStats => {
-        const { applications } = jobWithStats;
-        
-        // 각 상태별 지원자가 있는 채용공고만 해당 컬럼에 추가
-        const submittedApps = applications.filter(app => app.status === 'submitted');
-        const reviewingApps = applications.filter(app => app.status === 'reviewing');
-        const interviewApps = applications.filter(app => app.status === 'interview');
-        const approvedApps = applications.filter(app => app.status === 'accepted');
-
-        if (submittedApps.length > 0) {
-          stats.submitted.push({
-            ...jobWithStats,
-            applications: submittedApps,
-            applicationCount: submittedApps.length
-          });
-        }
-
-        if (reviewingApps.length > 0) {
-          stats.reviewing.push({
-            ...jobWithStats,
-            applications: reviewingApps,
-            applicationCount: reviewingApps.length
-          });
-        }
-
-        if (interviewApps.length > 0) {
-          stats.interview.push({
-            ...jobWithStats,
-            applications: interviewApps,
-            applicationCount: interviewApps.length
-          });
-        }
-
-        if (approvedApps.length > 0) {
-          stats.approved.push({
-            ...jobWithStats,
-            applications: approvedApps,
-            applicationCount: approvedApps.length
-          });
-        }
-      });
 
       setDashboardData(stats);
     } catch (error) {
-      console.error('대시보드 데이터 로딩 실패:', error);
+      console.error('지원서 데이터 로딩 실패:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [user, selectedFilter]);
+    fetchJobs();
+  }, [user]);
 
-  const StatusColumn = ({ title, items, emptyText }: { 
-    title: string; 
-    items: JobWithStats[]; 
-    emptyText: string;
-  }) => (
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <button className="text-gray-400 hover:text-gray-600">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-          </svg>
-        </button>
-      </div>
-      
-      <div className="space-y-3">
-        {items.length > 0 ? (
-          items.map((item) => (
-            <div key={`${item.job.id}-${title}`} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-medium text-gray-900 text-sm leading-tight">
-                  {item.job.title}
-                </h4>
-                <button className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="text-xs text-gray-500 mb-3">
-                {item.job.department} • {item.job.company}
-              </div>
-              
-              <div className="text-xs text-gray-600">
-                지원자 {item.applicationCount}명
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-gray-500 text-sm">
-            <div className="w-12 h-12 mx-auto mb-3 text-gray-300">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            {emptyText}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    if (selectedJobId) {
+      fetchApplicationsForJob(selectedJobId);
+    }
+  }, [selectedJobId]);
 
-  if (isLoading) {
+  const handleJobChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const jobId = parseInt(event.target.value);
+    console.log('Job 변경됨:', jobId);
+    setSelectedJobId(jobId);
+  };
+
+  const getSelectedJob = () => {
+    return jobs.find(job => job.id === selectedJobId);
+  };
+
+  const handleApplicationMenuClick = (application: Application) => {
+    console.log('메뉴 클릭:', application);
+    // TODO: 불합격 처리 등의 메뉴 액션 구현
+  };
+
+  if (isLoading && !selectedJobId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -203,63 +116,63 @@ const Dashboard = () => {
     );
   }
 
+  const selectedJob = getSelectedJob();
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">무신사 ATS</h1>
-              <div className="ml-4 text-sm text-gray-500">
-                {user?.name} ({user?.role === 'admin' ? '채용담당자' : user?.role === 'manager' ? '팀장' : '팀원'})
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <select 
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-black"
-              >
-                {getFilterOptions().map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              
-              <button
-                onClick={logout}
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                로그아웃
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader
+        user={user!}
+        jobs={jobs}
+        selectedJobId={selectedJobId}
+        onJobChange={handleJobChange}
+        onLogout={logout}
+      />
 
       {/* 대시보드 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {selectedJob && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDepartmentColor(selectedJob.department)}`}>
+                {selectedJob.department}
+              </span>
+            </div>
+            <p className="text-gray-600">
+              {selectedJob.company} · {selectedJob.experience} · {selectedJob.location}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-280px)]">
           <StatusColumn 
             title="지원 접수" 
             items={dashboardData.submitted}
-            emptyText="지원자 없음"
+            emptyText="지원자가 없습니다"
+            selectedJob={selectedJob}
+            onApplicationMenuClick={handleApplicationMenuClick}
           />
           <StatusColumn 
-            title="서류 검토" 
+            title="서류 전형" 
             items={dashboardData.reviewing}
-            emptyText="지원자 없음"
+            emptyText="서류 검토 중인 지원자가 없습니다"
+            selectedJob={selectedJob}
+            onApplicationMenuClick={handleApplicationMenuClick}
           />
           <StatusColumn 
             title="면접 진행" 
             items={dashboardData.interview}
-            emptyText="지원자 없음"
+            emptyText="면접 예정인 지원자가 없습니다"
+            selectedJob={selectedJob}
+            onApplicationMenuClick={handleApplicationMenuClick}
           />
           <StatusColumn 
-            title="인사 검토" 
-            items={dashboardData.approved}
-            emptyText="지원자 없음"
+            title="입사 제안" 
+            items={dashboardData.accepted}
+            emptyText="입사 제안한 지원자가 없습니다"
+            selectedJob={selectedJob}
+            onApplicationMenuClick={handleApplicationMenuClick}
           />
         </div>
       </main>
