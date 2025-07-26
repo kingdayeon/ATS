@@ -16,6 +16,7 @@ import ErrorDisplay from '../components/common/ErrorDisplay';
 const ApplicationDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { canAccessJob } = useAuthStore(); // 🔐 권한 체크 함수 추가
   const {
     getApplicationById,
     getJobById,
@@ -32,6 +33,9 @@ const ApplicationDetail = () => {
   // 스토어 또는 로컬 상태에서 데이터 가져오기
   const application = id ? getApplicationById(parseInt(id)) || localApplication : null;
   const job = application ? getJobById(application.job_id) || localJob : null;
+
+  // 🔐 권한 체크: 해당 부서 지원서에 접근 권한이 있는지 확인
+  const hasAccessPermission = job ? canAccessJob(job.department) : true; // 로딩 중에는 true
 
   // 🚀 직접 DB에서 데이터 가져오기 (스토어에 없을 때)
   const fetchDirectFromDB = async (applicationId: number) => {
@@ -62,6 +66,11 @@ const ApplicationDetail = () => {
 
       console.log(`✅ 채용공고 조회 성공: ${jobData.title}`);
       setLocalJob(jobData);
+
+      // 🔐 권한 체크: 데이터 로드 후 즉시 권한 확인
+      if (!canAccessJob(jobData.department)) {
+        console.log(`🚫 접근 권한 없음: ${jobData.department} 부서`);
+      }
 
     } catch (error) {
       console.error('❌ ApplicationDetail 데이터 로딩 실패:', error);
@@ -129,6 +138,17 @@ const ApplicationDetail = () => {
     return (
       <ErrorDisplay 
         message="지원서를 찾을 수 없습니다." 
+        onRetry={() => navigate('/dashboard')}
+        retryText="대시보드로 돌아가기"
+      />
+    );
+  }
+
+  // 🔐 권한 없음
+  if (!hasAccessPermission) {
+    return (
+      <ErrorDisplay 
+        message={`${job.department} 부서 지원서에 대한 접근 권한이 없습니다.`}
         onRetry={() => navigate('/dashboard')}
         retryText="대시보드로 돌아가기"
       />
