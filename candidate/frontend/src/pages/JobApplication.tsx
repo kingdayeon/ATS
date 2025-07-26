@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import FileUpload from "@/components/FileUpload";
 import { useJob } from "@/hooks/useJob";
 import { submitApplication, uploadFile } from "@/services/api";
+import { sendApplicationEmail } from "../../../../shared/services/email";
 import { supabase } from "@/lib/supabase";
 import type { ApplicationFormData, ReferralSource } from "@/types";
 import { REFERRAL_OPTIONS } from "@/types";
@@ -130,6 +131,22 @@ const JobApplication = () => {
         }
         
         console.log("Application submitted successfully!");
+        
+        // 🎉 이메일 자동 발송
+        try {
+          await sendApplicationEmail({
+            applicantName: formData.name,
+            applicantEmail: formData.email,
+            jobTitle: job?.title || '',
+            company: job?.company || '무신사',
+            applicationId: result.applicationId
+          });
+          console.log("✅ 이메일 발송 완료!");
+        } catch (emailError) {
+          console.error("⚠️ 이메일 발송 실패:", emailError);
+          // 이메일 발송 실패해도 지원서 제출은 성공으로 처리
+        }
+        
         setIsSubmitted(true);
       } else {
         alert(`지원서 제출에 실패했습니다: ${result.error}`);

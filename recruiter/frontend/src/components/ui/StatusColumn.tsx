@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Application, Job } from '../../../../../shared/types';
 import ApplicationCard from './ApplicationCard';
 
@@ -11,6 +12,8 @@ interface StatusColumnProps {
   emptyText: string;
   selectedJob?: Job;
   onApplicationMenuClick?: (application: Application) => void;
+  onStatusChange?: (applicationId: number, newStatus: string) => void;
+  statusKey: string; // 'submitted', 'reviewing', 'interview', 'accepted'
 }
 
 const StatusColumn = ({ 
@@ -18,10 +21,55 @@ const StatusColumn = ({
   items, 
   emptyText, 
   selectedJob,
-  onApplicationMenuClick
+  onApplicationMenuClick,
+  onStatusChange,
+  statusKey
 }: StatusColumnProps) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  // 드래그앤드롭 핸들러
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    try {
+      const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
+      const { id, currentStatus } = dragData;
+      
+      // 같은 상태로 드롭하는 경우 무시
+      if (currentStatus === statusKey) {
+        return;
+      }
+      
+      console.log(`지원자 ${dragData.name}를 ${statusKey}로 이동`);
+      onStatusChange?.(id, statusKey);
+    } catch (error) {
+      console.error('드롭 데이터 파싱 오류:', error);
+    }
+  };
+
   return (
-    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm" style={{ height: 'calc(100vh - 220px)' }}>
+    <div 
+      className={`flex flex-col bg-white rounded-lg border shadow-sm transition-all duration-200 ${
+        isDragOver 
+          ? 'border-blue-400 bg-blue-50 border-2' 
+          : 'border-gray-200'
+      }`} 
+      style={{ height: 'calc(100vh - 220px)' }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* 컬럼 헤더 */}
       <div className="flex items-center justify-between p-4 pb-3 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -46,6 +94,7 @@ const StatusColumn = ({
               application={application}
               selectedJob={selectedJob}
               onMenuClick={onApplicationMenuClick}
+              onStatusChange={onStatusChange}
             />
           ))
         ) : (

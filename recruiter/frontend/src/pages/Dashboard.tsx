@@ -105,6 +105,33 @@ const Dashboard = () => {
     // TODO: 불합격 처리 등의 메뉴 액션 구현
   };
 
+  // 🎯 상태 변경 핸들러 (드래그앤드롭 & 드롭다운)
+  const handleStatusChange = async (applicationId: number, newStatus: string) => {
+    try {
+      console.log(`지원자 ID ${applicationId}의 상태를 ${newStatus}로 변경`);
+      
+      // TODO: 실제 API 호출로 상태 업데이트
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: newStatus })
+        .eq('id', applicationId);
+
+      if (error) {
+        console.error('상태 변경 오류:', error);
+        alert('상태 변경에 실패했습니다.');
+        return;
+      }
+
+      // 성공 시 데이터 새로고침
+      await fetchApplicationsForJob(selectedJobId!);
+      console.log('✅ 상태 변경 완료!');
+      
+    } catch (error) {
+      console.error('상태 변경 실패:', error);
+      alert('상태 변경 중 오류가 발생했습니다.');
+    }
+  };
+
   if (isLoading && !selectedJobId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -152,6 +179,8 @@ const Dashboard = () => {
             emptyText="지원자가 없습니다"
             selectedJob={selectedJob}
             onApplicationMenuClick={handleApplicationMenuClick}
+            onStatusChange={handleStatusChange}
+            statusKey="submitted"
           />
           <StatusColumn 
             title="서류 전형" 
@@ -159,6 +188,8 @@ const Dashboard = () => {
             emptyText="서류 검토 중인 지원자가 없습니다"
             selectedJob={selectedJob}
             onApplicationMenuClick={handleApplicationMenuClick}
+            onStatusChange={handleStatusChange}
+            statusKey="reviewing"
           />
           <StatusColumn 
             title="면접 진행" 
@@ -166,6 +197,8 @@ const Dashboard = () => {
             emptyText="면접 예정인 지원자가 없습니다"
             selectedJob={selectedJob}
             onApplicationMenuClick={handleApplicationMenuClick}
+            onStatusChange={handleStatusChange}
+            statusKey="interview"
           />
           <StatusColumn 
             title="입사 제안" 
@@ -173,6 +206,8 @@ const Dashboard = () => {
             emptyText="입사 제안한 지원자가 없습니다"
             selectedJob={selectedJob}
             onApplicationMenuClick={handleApplicationMenuClick}
+            onStatusChange={handleStatusChange}
+            statusKey="accepted"
           />
         </div>
       </main>

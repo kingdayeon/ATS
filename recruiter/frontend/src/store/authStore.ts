@@ -9,6 +9,10 @@ interface AuthState {
   logout: () => void;
   setLoading: (loading: boolean) => void;
   canAccessJob: (department: string) => boolean;
+  canManageApplications: () => boolean;
+  canChangeApplicationStatus: () => boolean;
+  canViewAllApplications: () => boolean;
+  canScheduleInterview: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
