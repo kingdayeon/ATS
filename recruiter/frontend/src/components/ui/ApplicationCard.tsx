@@ -13,7 +13,7 @@ interface ApplicationCardProps {
 
 const ApplicationCard = ({ application, selectedJob, onMenuClick, onStatusChange }: ApplicationCardProps) => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { canChangeApplicationStatus } = useAuthStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,8 +35,8 @@ const ApplicationCard = ({ application, selectedJob, onMenuClick, onStatusChange
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 권한 체크: admin(채용담당자) 또는 manager(팀장)만 상태 변경 가능
-  const canChangeStatus = user?.role === 'admin' || user?.role === 'manager';
+  // 권한 체크: authStore 함수 사용
+  const canChangeStatus = canChangeApplicationStatus();
 
   // 상태 변경 처리
   const handleStatusChange = (newStatus: string) => {

@@ -56,11 +56,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       set({ jobs: allJobs || [], isLoading: false });
       
-      // 첫 번째 채용공고를 기본 선택 (selectedJobId가 없을 때만)
-      const { selectedJobId } = get();
-      if (allJobs && allJobs.length > 0 && !selectedJobId) {
-        set({ selectedJobId: allJobs[0].id });
-      }
     } catch (error) {
       console.error('채용공고 로딩 실패:', error);
       set({ error: '채용공고를 불러오는데 실패했습니다.', isLoading: false });
@@ -128,22 +123,30 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         throw new Error('채용공고를 찾을 수 없습니다.');
       }
 
+      console.log(`🔄 지원자 ${application.name}의 상태를 ${application.status} → ${newStatus}로 변경 시작`);
+
       // 🔄 데이터베이스 업데이트
       const { error } = await supabase
         .from('applications')
         .update({ status: newStatus })
         .eq('id', applicationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ DB 업데이트 실패:', error);
+        throw error;
+      }
 
-      // ✅ 로컬 상태 즉시 업데이트 (성능 최적화)
+      // ✅ 로컬 상태 즉시 업데이트 (드래그앤드롭 즉시 반영용)
       const updatedApplications = applications.map(app =>
         app.id === applicationId ? { ...app, status: newStatus } : app
       );
       set({ applications: updatedApplications, isLoading: false });
+      
+      console.log(`✅ 로컬 상태 업데이트 완료: ${application.name} → ${newStatus}`);
 
-      // 📧 이메일 발송 (백그라운드, 실패해도 UI 변경은 유지)
+      // 📧 이메일 발송 (백그라운드, 실패해도 상태 변경은 유지)
       try {
+        console.log('📧 이메일 발송 시작...');
         await sendStatusChangeEmail({
           applicantName: application.name,
           applicantEmail: application.email,
@@ -152,17 +155,19 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           newStatus: newStatus,
           applicationId: applicationId
         });
-        console.log('📧 상태 변경 이메일 발송 완료!');
+        console.log('✅ 상태 변경 이메일 발송 완료!');
       } catch (emailError) {
         console.error('⚠️ 이메일 발송 실패 (상태 변경은 완료됨):', emailError);
+        // 이메일 실패는 상태 변경 성공을 방해하지 않음
       }
 
-      console.log(`✅ 지원자 ${application.name}의 상태가 ${newStatus}로 변경되었습니다.`);
+      console.log(`🎉 지원자 ${application.name}의 상태 변경 완료: ${application.status} → ${newStatus}`);
       
     } catch (error) {
-      console.error('상태 변경 실패:', error);
+      console.error('❌ 상태 변경 실패:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       set({ 
-        error: '상태 변경 중 오류가 발생했습니다.', 
+        error: `상태 변경 중 오류가 발생했습니다: ${errorMessage}`, 
         isLoading: false 
       });
       throw error; // 컴포넌트에서 에러 처리할 수 있도록
