@@ -1,170 +1,52 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import type { Job, Application } from '../../../../shared/types';
+import { useDashboardStore } from '../store/dashboardStore';
 import DashboardHeader from '../components/ui/DashboardHeader';
 import StatusColumn from '../components/ui/StatusColumn';
-import { getDepartmentColor } from '../../../../shared/utils';
-import { sendStatusChangeEmail } from '../../../../shared/services/email';
-
-interface ApplicationWithJob extends Application {
-  job?: Job;
-}
-
-interface DashboardStats {
-  submitted: ApplicationWithJob[];
-  interview: ApplicationWithJob[];
-  accepted: ApplicationWithJob[];
-}
+import type { ApplicationStatus } from '../../../../shared/types';
 
 const Dashboard = () => {
   const { user, canAccessJob, logout } = useAuthStore();
-  const [dashboardData, setDashboardData] = useState<DashboardStats>({
-    submitted: [],
-    interview: [],
-    accepted: []
-  });
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    jobs,
+    selectedJobId,
+    isLoading,
+    error,
+    fetchJobs,
+    setSelectedJob,
+    getApplicationsByStatus,
+    getJobById,
+    updateApplicationStatus
+  } = useDashboardStore();
 
-  // 권한에 따른 채용공고 목록 가져오기
-  const fetchJobs = async () => {
-    try {
-      const { data: allJobs, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      // 권한에 따라 필터링
-      const filteredJobs = allJobs?.filter(job => canAccessJob(job.department)) || [];
-      setJobs(filteredJobs);
-      
-      // 첫 번째 채용공고를 기본 선택
-      if (filteredJobs.length > 0 && !selectedJobId) {
-        setSelectedJobId(filteredJobs[0].id);
-      }
-    } catch (error) {
-      console.error('채용공고 로딩 실패:', error);
-    }
-  };
-
-  // 선택된 채용공고의 지원자 데이터 가져오기
-  const fetchApplicationsForJob = async (jobId: number) => {
-    try {
-      setIsLoading(true);
-
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*')
-        .eq('job_id', jobId);
-
-      if (error) throw error;
-
-      // 상태별로 분류
-      const stats: DashboardStats = {
-        submitted: applications?.filter(app => app.status === 'submitted') || [],
-        interview: applications?.filter(app => app.status === 'interview') || [],
-        accepted: applications?.filter(app => app.status === 'accepted') || []
-      };
-
-      setDashboardData(stats);
-    } catch (error) {
-      console.error('지원서 데이터 로딩 실패:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // 🚀 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
     fetchJobs();
-  }, [user]);
+  }, [fetchJobs]);
 
-  useEffect(() => {
-    if (selectedJobId) {
-      fetchApplicationsForJob(selectedJobId);
-    }
-  }, [selectedJobId]);
+  // 🎯 권한에 따른 채용공고 필터링
+  const filteredJobs = jobs.filter(job => canAccessJob(job.department));
 
+  // 🔍 현재 선택된 채용공고
+  const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
+
+  // 🎯 채용공고 변경 핸들러
   const handleJobChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const jobId = parseInt(event.target.value);
-    console.log('Job 변경됨:', jobId);
-    setSelectedJobId(jobId);
+    setSelectedJob(jobId);
   };
 
-  const getSelectedJob = () => {
-    return jobs.find(job => job.id === selectedJobId);
-  };
-
-  const handleApplicationMenuClick = (application: Application) => {
-    console.log('메뉴 클릭:', application);
-    // TODO: 불합격 처리 등의 메뉴 액션 구현
-  };
-
-  // 🎯 상태 변경 핸들러 (드래그앤드롭 & 드롭다운)
+  // ⚡ 상태 변경 핸들러 (드래그앤드롭 + 메뉴 클릭)
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
-      console.log(`지원자 ID ${applicationId}의 상태를 ${newStatus}로 변경`);
-      
-      // 먼저 지원자 정보 가져오기 (이메일 발송용)
-      const { data: applicationData, error: fetchError } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          jobs (
-            title,
-            company
-          )
-        `)
-        .eq('id', applicationId)
-        .single();
-
-      if (fetchError) {
-        console.error('지원자 정보 조회 오류:', fetchError);
-        alert('지원자 정보 조회에 실패했습니다.');
-        return;
-      }
-      
-      // 상태 업데이트
-      const { error } = await supabase
-        .from('applications')
-        .update({ status: newStatus })
-        .eq('id', applicationId);
-
-      if (error) {
-        console.error('상태 변경 오류:', error);
-        alert('상태 변경에 실패했습니다.');
-        return;
-      }
-
-      // 성공 시 데이터 새로고침
-      await fetchApplicationsForJob(selectedJobId!);
-      console.log('✅ 상태 변경 완료!');
-
-      // 📧 이메일 발송 (백그라운드)
-      try {
-        await sendStatusChangeEmail({
-          applicantName: applicationData.name, // ✅ full_name → name 수정
-          applicantEmail: applicationData.email,
-          jobTitle: applicationData.jobs?.title || '채용공고',
-          company: applicationData.jobs?.company || '무신사',
-          newStatus: newStatus,
-          applicationId: applicationId
-        });
-        console.log('📧 상태 변경 이메일 발송 완료!');
-      } catch (emailError) {
-        console.error('⚠️ 이메일 발송 실패 (상태 변경은 완료됨):', emailError);
-        // 이메일 발송 실패해도 상태 변경은 완료된 상태이므로 에러로 처리하지 않음
-      }
-      
+      await updateApplicationStatus(applicationId, newStatus as ApplicationStatus);
     } catch (error) {
       console.error('상태 변경 실패:', error);
-      alert('상태 변경 중 오류가 발생했습니다.');
+      alert('상태 변경에 실패했습니다.');
     }
   };
 
+  // 🔄 로딩 중
   if (isLoading && !selectedJobId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -176,21 +58,37 @@ const Dashboard = () => {
     );
   }
 
-  const selectedJob = getSelectedJob();
+  // ❌ 에러 상태
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            새로고침
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen lg:h-screen bg-gray-50 flex flex-col lg:overflow-hidden">
-      {/* 헤더 */}
+      {/* 📱 헤더 */}
       <DashboardHeader
         user={user!}
-        jobs={jobs}
+        jobs={filteredJobs}
         selectedJobId={selectedJobId}
         onJobChange={handleJobChange}
         onLogout={logout}
       />
 
-      {/* 대시보드 */}
+      {/* 📊 메인 대시보드 */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col lg:min-h-0">
+        {/* 🎯 선택된 채용공고 정보 */}
         {selectedJob && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
@@ -202,33 +100,33 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* 📋 상태별 지원자 컬럼들 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 lg:flex-1 lg:min-h-0 pb-4">
-          <StatusColumn 
-            title="지원 접수" 
-            items={dashboardData.submitted}
-            emptyText="지원자가 없습니다"
-            selectedJob={selectedJob}
-            onApplicationMenuClick={handleApplicationMenuClick}
-            onStatusChange={handleStatusChange}
+          <StatusColumn
+            title="지원 접수"
             statusKey="submitted"
-          />
-          <StatusColumn 
-            title="면접 진행" 
-            items={dashboardData.interview}
-            emptyText="면접 예정인 지원자가 없습니다"
-            selectedJob={selectedJob}
-            onApplicationMenuClick={handleApplicationMenuClick}
+            items={getApplicationsByStatus('submitted')}
+            emptyText="지원자가 없습니다"
+            selectedJob={selectedJob || undefined}
             onStatusChange={handleStatusChange}
+          />
+          
+          <StatusColumn
+            title="면접 진행"
             statusKey="interview"
-          />
-          <StatusColumn 
-            title="입사 제안" 
-            items={dashboardData.accepted}
-            emptyText="입사 제안한 지원자가 없습니다"
-            selectedJob={selectedJob}
-            onApplicationMenuClick={handleApplicationMenuClick}
+            items={getApplicationsByStatus('interview')}
+            emptyText="면접 예정인 지원자가 없습니다"
+            selectedJob={selectedJob || undefined}
             onStatusChange={handleStatusChange}
+          />
+          
+          <StatusColumn
+            title="입사 제안"
             statusKey="accepted"
+            items={getApplicationsByStatus('accepted')}
+            emptyText="입사 제안한 지원자가 없습니다"
+            selectedJob={selectedJob || undefined}
+            onStatusChange={handleStatusChange}
           />
         </div>
       </main>
