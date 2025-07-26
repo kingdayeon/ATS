@@ -5,16 +5,81 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { supabase } from '../lib/supabase';
-import type { Application, Job } from '../../../../shared/types';
+import type { Application, Job, ApplicationStatus } from '../../../../shared/types';
 import { getDepartmentColor } from '../../../../shared/utils';
+import { sendStatusChangeEmail } from '../../../../shared/services/email';
+import { useAuthStore } from '../store/authStore';
 
 const ApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { canChangeApplicationStatus } = useAuthStore();
   const [application, setApplication] = useState<Application | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'resume' | 'portfolio'>('resume');
+
+  // 🎯 상태 변경 핸들러 (이메일/슬랙 알림 포함)
+  const handleStatusChange = async (newStatus: ApplicationStatus) => {
+    if (!application || !job) return;
+
+    try {
+      console.log(`지원자 ID ${application.id}의 상태를 ${newStatus}로 변경`);
+      
+      // 상태 업데이트
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: newStatus })
+        .eq('id', application.id);
+
+      if (error) {
+        console.error('상태 변경 오류:', error);
+        alert('상태 변경에 실패했습니다.');
+        return;
+      }
+
+      // 📧 이메일 발송 (백그라운드)
+      try {
+        await sendStatusChangeEmail({
+          applicantName: application.name,
+          applicantEmail: application.email,
+          jobTitle: job.title,
+          company: job.company,
+          newStatus: newStatus,
+          applicationId: application.id
+        });
+        console.log('📧 상태 변경 이메일 발송 완료!');
+      } catch (emailError) {
+        console.error('⚠️ 이메일 발송 실패 (상태 변경은 완료됨):', emailError);
+      }
+
+      // ✅ 화면 즉시 업데이트
+      setApplication(prev => prev ? { ...prev, status: newStatus } : null);
+      console.log('✅ 상태 변경 완료!');
+      
+    } catch (error) {
+      console.error('상태 변경 실패:', error);
+      alert('상태 변경 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 다음 단계 상태 계산
+  const getNextStatus = (currentStatus: ApplicationStatus): ApplicationStatus | null => {
+    switch (currentStatus) {
+      case 'submitted': return 'interview';
+      case 'interview': return 'accepted';
+      default: return null;
+    }
+  };
+
+  // 다음 단계 텍스트
+  const getNextStatusText = (currentStatus: ApplicationStatus): string | null => {
+    switch (currentStatus) {
+      case 'submitted': return '면접 승인';
+      case 'interview': return '최종 합격';
+      default: return null;
+    }
+  };
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -209,6 +274,40 @@ const ApplicationDetail = () => {
                   {application.custom_referral && (
                     <p className="text-sm text-gray-500 mt-1">{application.custom_referral}</p>
                   )}
+                </div>
+              )}
+
+              {/* 🎯 상태 변경 버튼들 (팀장 이상만) */}
+              {canChangeApplicationStatus() && (
+                <div className="border-t pt-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">전형 관리</h3>
+                  <div className="flex gap-3">
+                    {/* 다음 단계 이동 버튼 */}
+                    {getNextStatus(application.status) && (
+                      <button
+                        onClick={() => handleStatusChange(getNextStatus(application.status)!)}
+                        className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {getNextStatusText(application.status)}
+                      </button>
+                    )}
+                    
+                    {/* 불합격 처리 버튼 */}
+                    {application.status !== 'rejected' && application.status !== 'accepted' && (
+                      <button
+                        onClick={() => handleStatusChange('rejected')}
+                        className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        불합격 처리
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

@@ -9,10 +9,7 @@ interface AuthState {
   logout: () => void;
   setLoading: (loading: boolean) => void;
   canAccessJob: (department: string) => boolean;
-  canManageApplications: () => boolean;
   canChangeApplicationStatus: () => boolean;
-  canViewAllApplications: () => boolean;
-  canScheduleInterview: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -53,5 +50,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     
     return false;
+  },
+
+  // 지원자 상태 변경 권한 (팀장 이상)
+  canChangeApplicationStatus: () => {
+    const { user } = get();
+    if (!user) return false;
+    
+    // admin과 manager 권한만 가능
+    return user.role === 'admin' || user.role === 'manager';
   }
 })); 
