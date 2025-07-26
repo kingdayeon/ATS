@@ -112,6 +112,16 @@ const JobDetail = () => {
                           </li>
                         ))}
                       </ul>
+                    ) : section.title === "[자격 요건]" ? (
+                      <div className={textStyles}>
+                        {typeof section.content === 'string' && section.content.split('\n').map((line: string, lineIndex: number) => (
+                          line.trim() && (
+                            <div key={lineIndex} className="mb-2">
+                              {line.trim()}
+                            </div>
+                          )
+                        ))}
+                      </div>
                     ) : (
                       <p className={textStyles}>
                         {section.prefix}{section.content}
