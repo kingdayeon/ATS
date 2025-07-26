@@ -6,7 +6,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { supabase } from '../lib/supabase';
 import type { Application, Job } from '../../../../shared/types';
-import { getInitials, getAvatarColor, getDepartmentColor } from '../utils/colorUtils';
+import { getDepartmentColor } from '../../../../shared/utils';
 
 const ApplicationDetail = () => {
   const { id } = useParams();
@@ -145,18 +145,13 @@ const ApplicationDetail = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             {/* 프로필 헤더 */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className={`w-16 h-16 rounded-full ${getAvatarColor(application.name)} flex items-center justify-center text-white text-xl font-semibold`}>
-                {getInitials(application.name)}
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{application.name}</h2>
-                <p className="text-gray-600">{application.english_name}</p>
-                <div className="mt-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
-                    {getStatusText(application.status)}
-                  </span>
-                </div>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">{application.name}</h2>
+              <p className="text-gray-600">{application.english_name}</p>
+              <div className="mt-3">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}>
+                  {getStatusText(application.status)}
+                </span>
               </div>
             </div>
 

@@ -7,6 +7,13 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* 전체 페이지 스크롤 방지 */
+}
+
+/* 루트 컨테이너 높이 고정 */
+#root {
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* React-PDF 스타일 */
@@ -44,4 +51,16 @@ body {
   top: 0;
   left: 0;
   pointer-events: auto;
+}
+
+/* 노션 스타일 숨겨진 스크롤바 */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Safari and Chrome */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

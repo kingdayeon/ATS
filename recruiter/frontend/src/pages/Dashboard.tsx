@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import type { Job, Application } from '../../../../shared/types';
 import DashboardHeader from '../components/ui/DashboardHeader';
 import StatusColumn from '../components/ui/StatusColumn';
-import { getDepartmentColor } from '../utils/colorUtils';
+import { getDepartmentColor } from '../../../../shared/utils';
 
 interface ApplicationWithJob extends Application {
   job?: Job;
@@ -119,7 +119,7 @@ const Dashboard = () => {
   const selectedJob = getSelectedJob();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* 헤더 */}
       <DashboardHeader
         user={user!}
@@ -130,9 +130,9 @@ const Dashboard = () => {
       />
 
       {/* 대시보드 */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-6 py-6 w-full flex flex-col min-h-0">
         {selectedJob && (
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDepartmentColor(selectedJob.department)}`}>
@@ -145,7 +145,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-280px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 pb-4">
           <StatusColumn 
             title="지원 접수" 
             items={dashboardData.submitted}

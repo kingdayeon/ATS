@@ -21,9 +21,9 @@ const StatusColumn = ({
   onApplicationMenuClick
 }: StatusColumnProps) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm" style={{ height: 'calc(100vh - 220px)' }}>
       {/* 컬럼 헤더 */}
-      <div className="flex items-center justify-between mb-6 pb-3 border-b border-gray-100">
+      <div className="flex items-center justify-between p-4 pb-3 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
           <div className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
@@ -37,8 +37,8 @@ const StatusColumn = ({
         </button>
       </div>
       
-      {/* 카드 리스트 */}
-      <div className="space-y-3 flex-1">
+      {/* 카드 리스트 - 숨겨진 스크롤 */}
+      <div className="p-4 pt-3 pb-4 space-y-3 overflow-y-auto scrollbar-hide" style={{ height: 'calc(100vh - 300px)' }}>
         {items.length > 0 ? (
           items.map((application) => (
             <ApplicationCard

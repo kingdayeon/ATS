@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { Application, Job } from '../../../../../shared/types';
-import { getInitials, getAvatarColor, getDepartmentColor } from '../../utils/colorUtils';
+import { getDepartmentColor } from '../../../../../shared/utils';
 
 interface ApplicationCardProps {
   application: Application;
@@ -20,19 +20,14 @@ const ApplicationCard = ({ application, selectedJob, onMenuClick }: ApplicationC
   return (
     <div 
       onClick={handleCardClick}
-      className="group relative bg-white rounded-lg border-2 p-4 hover:shadow-sm transition-all duration-200 cursor-pointer border-gray-200 hover:border-gray-300"
+      className="group relative bg-white rounded-lg border p-4 hover:shadow-md transition-all duration-200 cursor-pointer border-gray-200 hover:border-blue-200 hover:bg-blue-50/30"
     >
       {/* 카드 헤더 */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3 flex-1">
-          {/* 아바타 */}
-          <div className={`w-8 h-8 rounded-full ${getAvatarColor(application.name)} flex items-center justify-center text-white text-xs font-semibold`}>
-            {getInitials(application.name)}
-          </div>
-          
+        <div className="flex items-center flex-1">
           {/* 이름 정보 */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-gray-900 text-sm truncate">
+            <h4 className="font-semibold text-gray-900 text-sm truncate">
               {application.name}
             </h4>
             <p className="text-xs text-gray-500 truncate">
