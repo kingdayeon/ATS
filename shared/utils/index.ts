@@ -1,18 +1,5 @@
 import { DEPARTMENT_COLORS, STATUS_COLORS, AVATAR_COLORS } from '../constants';
 
-// ===== COLOR UTILITIES =====
-
-// 부서별 색상 태그
-export const getDepartmentColor = (department: string): string => {
-  return DEPARTMENT_COLORS[department] || 'bg-gray-100 text-gray-700 border-gray-200';
-};
-
-// 상태별 색상
-export const getStatusColor = (status: string): string => {
-  return STATUS_COLORS[status] || 'bg-gray-50 border-gray-200';
-};
-
-// 아바타 색상 생성
 export const getAvatarColor = (name: string): string => {
   if (!name || typeof name !== 'string') return 'bg-gray-500';
   
@@ -24,6 +11,63 @@ export const getAvatarColor = (name: string): string => {
   
   const index = name.charCodeAt(0) % colors.length;
   return colors[index];
+};
+
+export const getDepartmentColor = (department: string): string => {
+  const colors: Record<string, string> = {
+    'Frontend Engineer': 'border-blue-200 bg-blue-50 text-blue-700',
+    'Backend Engineer': 'border-green-200 bg-green-50 text-green-700',
+    'Design Lead': 'border-purple-200 bg-purple-50 text-purple-700',
+    'Product Manager': 'border-orange-200 bg-orange-50 text-orange-700',
+    'Data Analyst': 'border-indigo-200 bg-indigo-50 text-indigo-700',
+    'QA Engineer': 'border-pink-200 bg-pink-50 text-pink-700',
+  };
+  
+  return colors[department] || 'border-gray-200 bg-gray-50 text-gray-700';
+};
+
+// 📧 면접 일정 선택을 위한 보안 토큰 생성
+export const generateInterviewToken = (applicationId: number): string => {
+  // 실제로는 더 복잡한 JWT 토큰을 사용해야 하지만, 
+  // 간단한 인코딩된 토큰으로 임시 구현
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  const payload = `${applicationId}-${timestamp}-${randomStr}`;
+  
+  // Base64 인코딩 (실제로는 JWT 사용 권장)
+  return btoa(payload).replace(/[+/=]/g, m => {
+    return m === '+' ? '-' : m === '/' ? '_' : '';
+  });
+};
+
+// 🔓 면접 토큰 검증 및 디코딩
+export const validateInterviewToken = (token: string, applicationId: number): boolean => {
+  try {
+    // URL-safe base64 디코딩
+    const normalizedToken = token.replace(/[-_]/g, m => m === '-' ? '+' : '/');
+    const decoded = atob(normalizedToken);
+    const [tokenAppId, timestamp, randomStr] = decoded.split('-');
+    
+    if (parseInt(tokenAppId) !== applicationId) {
+      return false;
+    }
+    
+    // 토큰 유효기간 체크 (24시간)
+    const tokenTime = parseInt(timestamp);
+    const now = Date.now();
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    
+    if (now - tokenTime > TWENTY_FOUR_HOURS) {
+      console.warn('만료된 면접 토큰:', token);
+      return false;
+    }
+    
+    return true;
+    
+  } catch (error) {
+    console.error('면접 토큰 검증 실패:', error);
+    return false;
+  }
 };
 
 // ===== TEXT UTILITIES =====
@@ -129,4 +173,6 @@ export const isValidUrl = (url: string): boolean => {
 // 클래스명 조건부 결합 (간단한 clsx 대체)
 export const cn = (...classes: (string | undefined | null | false)[]): string => {
   return classes.filter(Boolean).join(' ');
-}; 
+};
+
+ 

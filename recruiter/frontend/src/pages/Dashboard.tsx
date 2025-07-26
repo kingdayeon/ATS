@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import type { ApplicationStatus } from '../../../../shared/types';
+import type { ApplicationStatus, Application } from '../../../../shared/types';
+import type { InterviewSettings } from '../services/calendar';
 
 // 컴포넌트들
 import DashboardHeader from '../components/ui/DashboardHeader';
@@ -9,6 +10,7 @@ import JobSelector from '../components/dashboard/JobSelector';
 import DashboardGrid from '../components/dashboard/DashboardGrid';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
+import InterviewScheduleModal from '../components/interview/InterviewScheduleModal';
 
 const Dashboard = () => {
   const { user, canAccessJob, logout } = useAuthStore();
@@ -21,8 +23,22 @@ const Dashboard = () => {
     setSelectedJob,
     getApplicationsByStatus,
     getJobById,
-    updateApplicationStatus
+    updateApplicationStatus,
+    getApplicationById
   } = useDashboardStore();
+
+  // 🚀 면접 일정 설정 모달 상태
+  const [scheduleModal, setScheduleModal] = useState<{
+    isOpen: boolean;
+    applicationId: number | null;
+    applicantName: string;
+    department: string;
+  }>({
+    isOpen: false,
+    applicationId: null,
+    applicantName: '',
+    department: ''
+  });
 
   // 🚀 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
@@ -53,10 +69,60 @@ const Dashboard = () => {
   // ⚡ 상태 변경 핸들러 (드래그앤드롭 + 메뉴 클릭)
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
+      console.log('대시보드 상태 변경:', { applicationId, newStatus });
+
+      // 🚀 면접 상태로 변경하는 경우 일정 설정 필요한지 확인
+      if (newStatus === 'interview') {
+        const application = getApplicationById(applicationId);
+        if (application && application.status === 'submitted') {
+          // submitted -> interview 변경 시 일정 설정 모달 표시
+          console.log('📅 면접 일정 설정 모달 표시 (드래그앤드롭)');
+          setScheduleModal({
+            isOpen: true,
+            applicationId,
+            applicantName: application.name,
+            department: selectedJob?.department || ''
+          });
+          return; // 모달에서 처리하므로 여기서 중단
+        }
+      }
+
+      // 일반적인 상태 변경 (면접 일정 설정 없음)
       await updateApplicationStatus(applicationId, newStatus as ApplicationStatus);
     } catch (error) {
       console.error('상태 변경 실패:', error);
       alert('상태 변경에 실패했습니다.');
+    }
+  };
+
+  // 📅 면접 일정 설정 완료 핸들러
+  const handleScheduleConfirm = async () => {
+    try {
+      if (!scheduleModal.applicationId) return;
+
+      console.log('📅 대시보드에서 면접 일정 설정 완료:', scheduleModal);
+      
+      // TODO: 면접 일정 정보를 DB에 저장
+      // await saveInterviewSchedule(settings);
+      
+      // TODO: 일정 조율 링크가 포함된 이메일 발송
+      // await sendInterviewScheduleEmail(application, job, settings);
+
+      // 면접 상태로 변경
+      await updateApplicationStatus(scheduleModal.applicationId, 'interview');
+      
+      // 모달 닫기
+      setScheduleModal({
+        isOpen: false,
+        applicationId: null,
+        applicantName: '',
+        department: ''
+      });
+
+      console.log('✅ 대시보드 면접 승인 및 일정 설정 완료');
+    } catch (error) {
+      console.error('면접 승인 실패:', error);
+      alert('면접 승인 중 오류가 발생했습니다.');
     }
   };
 
@@ -87,29 +153,46 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen lg:h-screen bg-gray-50 flex flex-col lg:overflow-hidden">
-      {/* 📱 헤더 */}
-      <DashboardHeader
-        user={user!}
-        jobs={filteredJobs}
-        selectedJobId={selectedJobId}
-        onJobChange={handleJobChange}
-        onLogout={logout}
-      />
-
-      {/* 📊 메인 대시보드 */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col lg:min-h-0">
-        {/* 🎯 선택된 채용공고 정보 */}
-        <JobSelector selectedJob={selectedJob} />
-
-        {/* 📋 상태별 지원자 컬럼들 */}
-        <DashboardGrid
-          getApplicationsByStatus={getApplicationsByStatus}
-          selectedJob={selectedJob}
-          onStatusChange={handleStatusChange}
+    <>
+      <div className="min-h-screen lg:h-screen bg-gray-50 flex flex-col lg:overflow-hidden">
+        {/* 📱 헤더 */}
+        <DashboardHeader
+          user={user!}
+          jobs={filteredJobs}
+          selectedJobId={selectedJobId}
+          onJobChange={handleJobChange}
+          onLogout={logout}
         />
-      </main>
-    </div>
+
+        {/* 📊 메인 대시보드 */}
+        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col lg:min-h-0">
+          {/* 🎯 선택된 채용공고 정보 */}
+          <JobSelector selectedJob={selectedJob} />
+
+          {/* 📋 상태별 지원자 컬럼들 */}
+          <DashboardGrid
+            getApplicationsByStatus={getApplicationsByStatus}
+            selectedJob={selectedJob}
+            onStatusChange={handleStatusChange}
+          />
+        </main>
+      </div>
+
+      {/* 📅 면접 일정 설정 모달 */}
+      <InterviewScheduleModal
+        isOpen={scheduleModal.isOpen}
+        onClose={() => setScheduleModal({
+          isOpen: false,
+          applicationId: null,
+          applicantName: '',
+          department: ''
+        })}
+        onConfirm={handleScheduleConfirm}
+        applicationId={scheduleModal.applicationId || 0}
+        department={scheduleModal.department}
+        applicantName={scheduleModal.applicantName}
+      />
+    </>
   );
 };
 

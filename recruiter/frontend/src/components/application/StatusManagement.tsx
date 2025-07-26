@@ -1,13 +1,48 @@
+import { useState } from 'react';
 import type { ApplicationStatus } from '../../../../../shared/types';
 import { useAuthStore } from '../../store/authStore';
+import InterviewScheduleModal from '../interview/InterviewScheduleModal';
+import type { InterviewSettings } from '../../services/calendar';
+import { supabase } from '../../../../../shared/lib/supabase';
 
 interface StatusManagementProps {
   currentStatus: ApplicationStatus;
-  onStatusChange: (newStatus: ApplicationStatus) => Promise<void>;
+  onStatusChange: (newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => Promise<void>;
+  applicationId: number;
+  applicantName: string;
+  department: string;
 }
 
-const StatusManagement = ({ currentStatus, onStatusChange }: StatusManagementProps) => {
+const StatusManagement = ({ 
+  currentStatus, 
+  onStatusChange,
+  applicationId,
+  applicantName,
+  department
+}: StatusManagementProps) => {
   const { canChangeApplicationStatus } = useAuthStore();
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setModalOpen(true);
+  };
+
+  const handleConfirmSchedule = () => {
+    onStatusChange('interview');
+    setModalOpen(false);
+  };
+  
+  const handleSelectChange = (value: ApplicationStatus) => {
+    if (value === 'interview') {
+      handleOpenModal();
+    } else {
+      // 면접이 아닌 경우 바로 상태 변경
+      const nextStatus = getNextStatus(value);
+      if (nextStatus) {
+        onStatusChange(nextStatus);
+      }
+    }
+  };
 
   // 다음 단계 상태 계산
   const getNextStatus = (status: ApplicationStatus): ApplicationStatus | null => {
@@ -27,6 +62,57 @@ const StatusManagement = ({ currentStatus, onStatusChange }: StatusManagementPro
     }
   };
 
+  // 면접 승인 버튼 클릭 (모달 표시)
+  const handleInterviewApproval = () => {
+    if (currentStatus === 'submitted') {
+      console.log('면접 일정 설정 모달 표시');
+      handleOpenModal();
+    } else {
+      // 면접이 아닌 경우 바로 상태 변경
+      const nextStatus = getNextStatus(currentStatus);
+      if (nextStatus) {
+        onStatusChange(nextStatus);
+      }
+    }
+  };
+
+  // 모달에서 일정 설정 완료
+  const handleScheduleConfirm = async (settings: InterviewSettings) => {
+    try {
+      console.log('면접 일정 설정 완료:', settings);
+      
+      // 1. 먼저 면접 설정을 DB에 저장
+      console.log('📦 면접 설정을 DB에 저장 중...');
+      const { error: saveError } = await supabase
+        .from('interview_settings')
+        .upsert({
+          application_id: applicationId,
+          date_range_start: settings.dateRange.start,
+          date_range_end: settings.dateRange.end,
+          time_range_start: settings.timeRange.start,
+          time_range_end: settings.timeRange.end,
+          duration: settings.duration,
+          department: settings.department,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (saveError) {
+        console.error('면접 설정 DB 저장 실패:', saveError);
+        throw new Error('면접 설정을 저장할 수 없습니다.');
+      }
+      
+      console.log('✅ 면접 설정 DB 저장 완료');
+      
+      // 2. 면접 상태로 변경 (설정은 이미 DB에 저장됨)
+      await onStatusChange('interview');
+      console.log('✅ 면접 승인 및 일정 설정 완료');
+    } catch (error) {
+      console.error('면접 승인 실패:', error);
+      alert('면접 승인 중 오류가 발생했습니다.');
+    }
+  };
+
   // 권한이 없으면 렌더링하지 않음
   if (!canChangeApplicationStatus()) {
     return null;
@@ -36,36 +122,48 @@ const StatusManagement = ({ currentStatus, onStatusChange }: StatusManagementPro
   const nextStatusText = getNextStatusText(currentStatus);
 
   return (
-    <div className="border-t pt-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">전형 관리</h3>
-      <div className="flex gap-3">
-        {/* 다음 단계 이동 버튼 */}
-        {nextStatus && (
-          <button
-            onClick={() => onStatusChange(nextStatus)}
-            className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-          >
-            <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            {nextStatusText}
-          </button>
-        )}
-        
-        {/* 불합격 처리 버튼 */}
-        {currentStatus !== 'rejected' && currentStatus !== 'accepted' && (
-          <button
-            onClick={() => onStatusChange('rejected')}
-            className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-          >
-            <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            불합격 처리
-          </button>
-        )}
+    <>
+      <div className="border-t pt-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">전형 관리</h3>
+        <div className="flex gap-3">
+          {/* 다음 단계 이동 버튼 */}
+          {nextStatus && (
+            <button
+              onClick={handleInterviewApproval}
+              className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {nextStatusText}
+            </button>
+          )}
+          
+          {/* 불합격 처리 버튼 */}
+          {currentStatus !== 'rejected' && currentStatus !== 'accepted' && (
+            <button
+              onClick={() => onStatusChange('rejected')}
+              className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              불합격 처리
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* 면접 일정 설정 모달 */}
+      <InterviewScheduleModal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleConfirmSchedule}
+        applicationId={applicationId}
+        applicantName={applicantName}
+        department={department}
+      />
+    </>
   );
 };
 

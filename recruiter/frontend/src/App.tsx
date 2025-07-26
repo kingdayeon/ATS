@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import ApplicationDetail from './pages/ApplicationDetail';
+import InterviewScheduling from './pages/InterviewScheduling';
+import InterviewScheduled from './pages/InterviewScheduled';
 
 function App() {
   const { user, isLoading, isAuthenticated, login, setLoading } = useAuthStore();
@@ -66,7 +68,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* 로그인이 필요한 라우트들 */}
+        {/* 공개 라우트 */}
+        <Route path="/interview-scheduling/:applicationId/:token" element={<InterviewScheduling />} />
+        <Route path="/interview-scheduled/:applicationId" element={<InterviewScheduled />} />
+        
+        {/* 인증 필요 라우트 */}
         {isAuthenticated ? (
           <>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -81,6 +87,7 @@ function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </>
         )}
+
       </Routes>
     </Router>
   );

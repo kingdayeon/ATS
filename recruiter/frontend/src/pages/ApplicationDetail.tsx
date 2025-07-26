@@ -4,6 +4,7 @@ import type { ApplicationStatus, Application, Job } from '../../../../shared/typ
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
 import { supabase } from '../../../../shared/lib/supabase';
+import type { InterviewSettings } from '../services/calendar';
 
 // 분리된 컴포넌트들
 import ApplicationHeader from '../components/application/ApplicationHeader';
@@ -12,11 +13,12 @@ import StatusManagement from '../components/application/StatusManagement';
 import PDFViewer from '../components/application/PDFViewer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
+import InterviewScheduleModal from '../components/interview/InterviewScheduleModal';
 
 const ApplicationDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { canAccessJob } = useAuthStore(); // 🔐 권한 체크 함수 추가
+  const { canAccessJob } = useAuthStore();
   const {
     getApplicationById,
     getJobById,
@@ -29,6 +31,7 @@ const ApplicationDetail = () => {
   const [localApplication, setLocalApplication] = useState<Application | null>(null);
   const [localJob, setLocalJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   // 스토어 또는 로컬 상태에서 데이터 가져오기
   const application = id ? getApplicationById(parseInt(id)) || localApplication : null;
@@ -100,34 +103,36 @@ const ApplicationDetail = () => {
     }
   }, [id, getApplicationById]);
 
-  // ⚡ 상태 변경 핸들러 (이메일/슬랙 알림 포함)
-  const handleStatusChange = async (newStatus: ApplicationStatus) => {
-    if (!application) return;
-
-    try {
-      if (getApplicationById(application.id)) {
-        // 스토어에 있으면 스토어 함수 사용
+  // ⚡ 상태 변경 핸들러 (면접 일정 설정 포함)
+  const handleStatusChange = async (newStatus: Application['status']) => {
+    if (newStatus === 'interview') {
+      setScheduleModalOpen(true);
+    } else {
+      if (!application) return;
+      try {
+        console.log('상태 변경 시작:', { newStatus });
         await updateApplicationStatus(application.id, newStatus);
-      } else {
-        // 스토어에 없으면 직접 업데이트 후 로컬 상태 갱신
-        const { error } = await supabase
-          .from('applications')
-          .update({ status: newStatus })
-          .eq('id', application.id);
-
-        if (error) throw error;
-
-        // 로컬 상태 업데이트
-        setLocalApplication(prev => prev ? { ...prev, status: newStatus } : null);
+        console.log('✅ 상태 변경 완료!');
+      } catch (error) {
+        console.error('상태 변경 실패:', error);
+        alert('상태 변경에 실패했습니다.');
       }
-      
-      console.log('✅ 상태 변경 완료!');
-    } catch (error) {
-      console.error('상태 변경 실패:', error);
-      alert('상태 변경에 실패했습니다.');
     }
   };
 
+  const handleScheduleConfirm = async () => {
+    if (!application) return;
+    try {
+      console.log('면접 일정 확정 시작');
+      await updateApplicationStatus(application.id, 'interview');
+      setScheduleModalOpen(false);
+      console.log('✅ 면접 일정 확정 완료!');
+    } catch (error) {
+      console.error('면접 일정 확정 실패:', error);
+      alert('면접 일정 확정에 실패했습니다.');
+    }
+  };
+  
   // 🔄 로딩 중
   if (isLoading) {
     return <LoadingSpinner message="지원서 로딩 중..." />;
@@ -163,17 +168,12 @@ const ApplicationDetail = () => {
       {/* 메인 컨텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* 왼쪽: 지원자 정보 + 상태 관리 */}
-        <div className="xl:col-span-1 space-y-4">
-          <ApplicationInfo
-            application={application}
+        <div className="md:col-span-1 space-y-6">
+          <ApplicationInfo 
+            application={application} 
             job={job}
             getStatusText={getStatusText}
             getStatusColor={getStatusColor}
-          />
-          
-          <StatusManagement
-            currentStatus={application.status}
-            onStatusChange={handleStatusChange}
           />
         </div>
 
@@ -182,6 +182,16 @@ const ApplicationDetail = () => {
           <PDFViewer application={application} />
         </div>
       </div>
+      {isScheduleModalOpen && (
+        <InterviewScheduleModal 
+          isOpen={isScheduleModalOpen}
+          onClose={() => setScheduleModalOpen(false)}
+          onConfirm={handleScheduleConfirm}
+          applicationId={application.id}
+          applicantName={application.name}
+          department={job.department}
+        />
+      )}
     </div>
   );
 };
