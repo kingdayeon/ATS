@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import type { User } from '../../../../shared/types';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (user: User) => void;
+  setSession: (session: Session | null) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   canAccessJob: (department: string) => boolean;
@@ -14,19 +17,42 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  session: null,
   isLoading: true,
   isAuthenticated: false,
 
-  login: (user: User) => set({ 
-    user, 
-    isAuthenticated: true, 
-    isLoading: false 
-  }),
+  setSession: async (session: Session | null) => {
+    if (!session) {
+      set({ session: null, user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
 
-  logout: () => set({ 
-    user: null, 
-    isAuthenticated: false, 
-    isLoading: false 
+    // 세션이 있으면, users 테이블에서 상세 프로필 정보를 가져옵니다.
+    const { data: userProfile, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', session.user.email)
+      .single();
+
+    if (error) {
+      console.error('사용자 프로필 조회 실패:', error);
+      set({ session, user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
+
+    set({
+      session,
+      user: userProfile as User,
+      isAuthenticated: true,
+      isLoading: false
+    });
+  },
+
+  logout: () => set({
+    user: null,
+    session: null,
+    isAuthenticated: false,
+    isLoading: false
   }),
 
   setLoading: (loading: boolean) => set({ isLoading: loading }),

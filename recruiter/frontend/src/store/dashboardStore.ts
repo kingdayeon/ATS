@@ -3,6 +3,7 @@ import { supabase } from '../../../../shared/lib/supabase';
 // import { sendStatusChangeEmail } from '../../../../shared/services/email'; // 이메일 직접 발송 로직은 Edge Function으로 이동했으므로 주석 처리 또는 삭제
 import type { Application, Job, ApplicationStatus } from '../../../../shared/types';
 import type { InterviewSettings } from '../services/calendar';
+import { useAuthStore } from './authStore';
 
 interface DashboardState {
   // 📊 데이터
@@ -157,6 +158,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       console.log('✅ 지원자 정보 조회 완료:', application)
 
+      // 👤 현재 사용자 세션에서 provider_token 및 이메일 가져오기
+      const session = useAuthStore.getState().session;
+      const user = useAuthStore.getState().user;
+      const providerToken = session?.provider_token;
+      const userEmail = user?.email;
+
+      if (newStatus === 'interview' && (!providerToken || !userEmail)) {
+        throw new Error('Google 계정 인증 정보(토큰 또는 이메일)를 찾을 수 없습니다. 다시 로그인해주세요.');
+      }
+      
       // 3. 상태 변경 이메일 발송 (Edge Function 호출)
       console.log('📧 상태 변경 이메일 발송 시작...')
       console.log('📤 Edge Function 호출 데이터:', {
@@ -167,6 +178,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         newStatus,
         applicationId,
         interviewSettings, // 면접 설정값 전달
+        providerToken, // 🔑 provider_token 전달
+        userEmail,     // 👤 현재 로그인한 사용자 이메일 전달
       })
 
       const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-status-change-email', {
@@ -178,6 +191,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           newStatus,
           applicationId,
           interviewSettings, // body에도 면접 설정값 추가
+          providerToken, // 🔑 provider_token 전달
+          userEmail,     // 👤 현재 로그인한 사용자 이메일 전달
         }
       })
 

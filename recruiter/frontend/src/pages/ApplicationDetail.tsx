@@ -108,14 +108,14 @@ const ApplicationDetail = () => {
     if (newStatus === 'interview') {
       setScheduleModalOpen(true);
     } else {
-      if (!application) return;
-      try {
+    if (!application) return;
+    try {
         console.log('상태 변경 시작:', { newStatus });
         await updateApplicationStatus(application.id, newStatus);
-        console.log('✅ 상태 변경 완료!');
-      } catch (error) {
-        console.error('상태 변경 실패:', error);
-        alert('상태 변경에 실패했습니다.');
+      console.log('✅ 상태 변경 완료!');
+    } catch (error) {
+      console.error('상태 변경 실패:', error);
+      alert('상태 변경에 실패했습니다.');
       }
     }
   };
@@ -132,7 +132,7 @@ const ApplicationDetail = () => {
       alert('면접 일정 확정에 실패했습니다.');
     }
   };
-  
+
   // 🔄 로딩 중
   if (isLoading) {
     return <LoadingSpinner message="지원서 로딩 중..." />;
@@ -169,8 +169,8 @@ const ApplicationDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
         {/* 왼쪽: 지원자 정보 + 상태 관리 */}
         <div className="md:col-span-1 space-y-6">
-          <ApplicationInfo 
-            application={application} 
+          <ApplicationInfo
+            application={application}
             job={job}
             getStatusText={getStatusText}
             getStatusColor={getStatusColor}

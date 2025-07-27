@@ -7,6 +7,7 @@ import { supabase } from '../../../../shared/lib/supabase';
 import { validateInterviewToken } from '../../../../shared/utils';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
+import { useAuthStore } from '../store/authStore';
 
 // 지원자 정보
 interface ApplicantInfo {
@@ -140,21 +141,20 @@ const InterviewScheduling = () => {
       setIsSubmitting(true);
       console.log('📝 면접 시간 확정 시작:', selectedSlot);
 
-      // 🚀 새로운 Edge Function 호출 (면접 시간 확정 + Google Calendar + Slack + 이메일)
+      // 🚀 Edge Function 호출 (applicationId와 selectedSlot만 전달)
       const { data, error } = await supabase.functions.invoke('confirm-interview-schedule', {
         body: {
           applicationId: applicant.id,
-          selectedSlot: selectedSlot
+          selectedSlot: selectedSlot,
         }
       });
 
       if (error) {
-        console.error('면접 시간 확정 API 호출 실패:', error);
-        throw new Error('면접 시간 확정 중 오류가 발생했습니다.');
+        throw error;
       }
-
+      
       if (!data?.success) {
-        console.error('면접 시간 확정 실패:', data?.error);
+        console.error('면접 시간 확정 실패:', data?.logs);
         throw new Error(data?.error || '면접 시간 확정에 실패했습니다.');
       }
 
@@ -163,9 +163,9 @@ const InterviewScheduling = () => {
       // 완료 페이지로 이동
       navigate(`/interview-scheduled/${applicationId}`);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('면접 시간 확정 실패:', error);
-      alert(error instanceof Error ? error.message : '면접 시간 확정 중 오류가 발생했습니다.');
+      alert(error.message || '면접 시간 확정 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
     }

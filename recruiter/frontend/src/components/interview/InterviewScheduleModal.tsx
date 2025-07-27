@@ -78,7 +78,7 @@ const InterviewScheduleModal = ({
       // 2. onConfirm 호출 (DB 저장 후)
       // 이제 onConfirm은 상태 변경만 트리거합니다.
       onConfirm();
-      onClose();
+    onClose();
 
     } catch (error: any) {
       console.error('❌ 면접 설정 저장 실패:', error);
