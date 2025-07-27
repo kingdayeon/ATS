@@ -175,7 +175,7 @@ const getCalendarBusyTimes = async (calendarId, startDate, endDate, addLog) => {
   }
 };
 
-// 🕐 가능한 면접 시간 슬롯 생성 (시간대 인식 - 최종 수정 3)
+// 🕐 가능한 면접 시간 슬롯 생성 (시간대 인식 - 최종 수정 4)
 const generateAvailableSlots = (interviewersBusyTimes: any, dateRange: any, timeRange: any, duration: number, addLog) => {
     const slots: any[] = [];
     try {
@@ -187,8 +187,7 @@ const generateAvailableSlots = (interviewersBusyTimes: any, dateRange: any, time
         const [startHour, startMinute] = startTimeStr.split(':').map(Number);
         const [endHour, endMinute] = endTimeStr.split(':').map(Number);
         const durationMillis = duration * 60 * 1000;
-        // 간격을 30분이 아닌, 면접 시간(duration)으로 변경
-        const intervalMillis = duration * 60 * 1000; 
+        const intervalMillis = 30 * 60 * 1000; // 30분 간격으로 시작 시간 체크
 
         addLog('[generateAvailableSlots] 1. 바쁜 시간 밀리초로 변환 시작...');
         const allBusyMillis: { start: number; end: number }[] = [];
