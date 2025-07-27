@@ -459,7 +459,7 @@ serve(async (req) => {
         emailContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #000; color: white; padding: 20px; text-align: center;">
-              <h1 style="margin: 0; font-size: 24px;">🎉 축하합니다!</h1>
+              <h1 style="margin: 0; font-size: 24px;">축하합니다!</h1>
             </div>
             
             <div style="padding: 30px; background: #f9f9f9;">
@@ -475,7 +475,7 @@ serve(async (req) => {
               <div style="background: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0;">
                 <h3 style="margin: 0 0 10px 0; color: #1f2937;">📅 면접 일정 선택</h3>
                 <p style="margin: 0; color: #6b7280;">
-                  아래 링크에서 편리한 시간을 선택해 주세요:
+                  아래 링크에서 가능한 시간을 선택해 주세요:
                 </p>
               </div>
               
@@ -511,7 +511,7 @@ serve(async (req) => {
           </div>
         `;
         
-        slackMessage = `🎯 *면접 진행 알림*\n\n*지원자:* ${applicantName}\n*포지션:* ${jobTitle}\n*상태:* 면접 진행\n\n📅 지원자가 면접 시간을 선택할 수 있는 링크가 발송되었습니다.\n\n*일정 선택 링크:* ${schedulingUrl}`;
+        slackMessage = `*면접 진행 알림*\n\n*지원자:* ${applicantName}\n*포지션:* ${jobTitle}\n*상태:* 면접 진행\n\n📅 지원자에게 면접 시간 선택 이메일이 발송되었습니다.`;
         
         break;
 
@@ -664,7 +664,7 @@ serve(async (req) => {
       };
 
       if (newStatus === 'interview') {
-        // 면접 진행 시 추가 버튼 (지원서 보기)
+        // 면접 진행 시에는 '지원서 보기' 버튼만 표시
         (slackPayload.blocks as any[]).push({
           type: "actions",
           elements: [
@@ -672,7 +672,7 @@ serve(async (req) => {
               type: "button",
               text: {
                 type: "plain_text",
-                text: "📋 지원서 보기"
+                text: "📄 지원서 보기"
               },
               url: `http://localhost:5175/application/${applicationId}`,
               style: "primary"

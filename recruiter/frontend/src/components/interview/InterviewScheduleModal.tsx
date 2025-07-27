@@ -38,52 +38,18 @@ const InterviewScheduleModal = ({
     department
   });
 
-  const handleConfirm = async () => {
-    // 유효성 검사
-    if (!settings.dateRange.start || !settings.dateRange.end || !settings.timeRange.start || !settings.timeRange.end || !settings.duration) {
-      alert('모든 필드를 채워주세요.');
+  // 날짜 및 시간 유효성 검사
+  const isDateRangeValid = settings.dateRange.start <= settings.dateRange.end;
+  const isTimeRangeValid = settings.timeRange.start < settings.timeRange.end;
+  const isFormValid = isDateRangeValid && isTimeRangeValid;
+
+  const handleConfirm = () => {
+    if (!isFormValid) {
+      alert('날짜 및 시간 범위를 올바르게 설정해주세요.');
       return;
     }
-
-    const settingsToSave = {
-      dateRange: {
-        start: settings.dateRange.start,
-        end: settings.dateRange.end,
-      },
-      timeRange: { start: settings.timeRange.start, end: settings.timeRange.end },
-      duration: settings.duration,
-    };
-
-    try {
-      // 1. DB에 면접 설정 저장
-      const { data, error } = await supabase
-        .from('interview_settings')
-        .upsert({
-          application_id: applicationId,
-          date_range_start: settingsToSave.dateRange.start,
-          date_range_end: settingsToSave.dateRange.end,
-          time_range_start: settingsToSave.timeRange.start,
-          time_range_end: settingsToSave.timeRange.end,
-          duration: settingsToSave.duration,
-          department: department,
-        }, { onConflict: 'application_id' })
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('✅ 면접 설정 DB 저장 성공:', data);
-
-      // 2. onConfirm 호출 (DB 저장 후)
-      // 이제 onConfirm은 상태 변경만 트리거합니다.
-      onConfirm();
+    onConfirm(settings);
     onClose();
-
-    } catch (error: any) {
-      console.error('❌ 면접 설정 저장 실패:', error);
-      alert(`면접 설정 저장에 실패했습니다: ${error.message}`);
-    }
   };
 
   const updateDateRange = (field: 'start' | 'end', value: string) => {
@@ -211,24 +177,15 @@ const InterviewScheduleModal = ({
             </div>
           </div>
 
-          {/* 참고 정보 */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="flex">
-              <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="ml-3">
-                <h4 className="text-sm font-medium text-blue-900">
-                  {department === 'Design Lead' ? '1:1 면접' : '팀 면접'}
-                </h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  {department === 'Design Lead' 
-                    ? '디자인 팀장과의 개별 면접입니다.'
-                    : '팀장과 팀원이 함께 참여하는 면접입니다.'}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* 유효성 검사 오류 메시지 */}
+          {!isDateRangeValid && (
+            <p className="text-sm text-red-500">종료일은 시작일보다 빠를 수 없습니다.</p>
+          )}
+          {!isTimeRangeValid && (
+            <p className="text-sm text-red-500">종료 시간은 시작 시간보다 빨라야 합니다.</p>
+          )}
+
+          {/* "팀 면접" 박스는 제거됨 */}
         </div>
 
         {/* 푸터 */}
@@ -241,7 +198,8 @@ const InterviewScheduleModal = ({
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            disabled={!isFormValid} // 유효성 검사에 따라 버튼 비활성화
+            className="px-4 py-2 text-sm font-medium text-white bg-black border border-transparent rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
             면접 일정 설정 완료
           </button>

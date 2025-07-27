@@ -440,9 +440,6 @@ const JobApplication = () => {
             </a>
             로 문의해 주세요!
           </p>
-          <p className="text-xs text-gray-500">
-            채용 관리 솔루션 그리팅(Greeting)의 고객센터로 연결됩니다.
-          </p>
         </footer>
       </div>
     </div>

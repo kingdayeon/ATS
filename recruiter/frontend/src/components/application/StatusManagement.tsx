@@ -27,9 +27,26 @@ const StatusManagement = ({
     setModalOpen(true);
   };
 
-  const handleConfirmSchedule = () => {
-    onStatusChange('interview');
-    setModalOpen(false);
+  const handleConfirmSchedule = async (settings: InterviewSettings) => {
+    try {
+      // 1. 먼저 면접 설정을 DB에 저장
+      await supabase.from('interview_settings').upsert({
+        application_id: applicationId,
+        date_range_start: settings.dateRange.start,
+        date_range_end: settings.dateRange.end,
+        time_range_start: settings.timeRange.start,
+        time_range_end: settings.timeRange.end,
+        duration: settings.duration,
+        department: department,
+      }, { onConflict: 'application_id' });
+
+      // 2. 면접 상태로 변경
+      onStatusChange('interview');
+      setModalOpen(false);
+    } catch (error: any) {
+      console.error('면접 승인 실패:', error);
+      alert(`면접 승인 중 오류가 발생했습니다: ${error.message}`);
+    }
   };
   
   const handleSelectChange = (value: ApplicationStatus) => {
@@ -73,43 +90,6 @@ const StatusManagement = ({
       if (nextStatus) {
         onStatusChange(nextStatus);
       }
-    }
-  };
-
-  // 모달에서 일정 설정 완료
-  const handleScheduleConfirm = async (settings: InterviewSettings) => {
-    try {
-      console.log('면접 일정 설정 완료:', settings);
-      
-      // 1. 먼저 면접 설정을 DB에 저장
-      console.log('📦 면접 설정을 DB에 저장 중...');
-      const { error: saveError } = await supabase
-        .from('interview_settings')
-        .upsert({
-          application_id: applicationId,
-          date_range_start: settings.dateRange.start,
-          date_range_end: settings.dateRange.end,
-          time_range_start: settings.timeRange.start,
-          time_range_end: settings.timeRange.end,
-          duration: settings.duration,
-          department: settings.department,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (saveError) {
-        console.error('면접 설정 DB 저장 실패:', saveError);
-        throw new Error('면접 설정을 저장할 수 없습니다.');
-      }
-      
-      console.log('✅ 면접 설정 DB 저장 완료');
-      
-      // 2. 면접 상태로 변경 (설정은 이미 DB에 저장됨)
-      await onStatusChange('interview');
-      console.log('✅ 면접 승인 및 일정 설정 완료');
-    } catch (error) {
-      console.error('면접 승인 실패:', error);
-      alert('면접 승인 중 오류가 발생했습니다.');
     }
   };
 

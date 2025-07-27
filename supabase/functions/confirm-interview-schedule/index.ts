@@ -152,9 +152,79 @@ serve(async (req) => {
     }).eq('id', applicationId);
     addLog('[DB] ✅ 지원자 상태 및 면접 시간 업데이트 완료');
     
-    const slackWebhook = Deno.env.get('DEV_SLACK_WEBHOOK');
+    // 6. 지원자에게 면접 확정 이메일 발송
+    addLog('[EMAIL] 📧 지원자에게 면접 확정 이메일 발송 시작...');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey) {
+        const startTime = new Date(selectedSlot.start).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'full', timeStyle: 'short' });
+        const emailSubject = `[무신사] ${job.title} 면접 일정이 확정되었습니다.`;
+        const emailContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #333;">✅ 면접 일정이 확정되었습니다.</h2>
+                <p>안녕하세요, ${applicant.name}님.</p>
+                <p>${job.title} 포지션 면접 일정이 아래와 같이 확정되었습니다.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p><strong>🗓️ 면접 일시:</strong> ${startTime}</p>
+                    <p><strong>📍 면접 장소:</strong> 서울특별시 성동구 성수동2가 271-22, 무신사 성수 (E1) 10층</p>
+                </div>
+                <p>면접 시간에 늦지 않게 도착해주시기 바랍니다. 좋은 결과 있기를 바랍니다!</p>
+                <p>감사합니다.<br>무신사 채용팀</p>
+            </div>
+        `;
+
+        await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                from: '무신사 채용팀 <onboarding@resend.dev>',
+                to: [applicant.email],
+                subject: emailSubject,
+                html: emailContent,
+            }),
+        });
+        addLog('[EMAIL] ✅ 지원자에게 면접 확정 이메일 발송 완료');
+    } else {
+        addLog('[EMAIL] ⚠️ RESEND_API_KEY가 없어 이메일 발송을 건너뜁니다.');
+    }
+
+    // 7. Slack 알림 발송
+    const DEV_WEBHOOK = Deno.env.get('DEV_SLACK_WEBHOOK');
+    const DESIGN_WEBHOOK = Deno.env.get('DESIGN_SLACK_WEBHOOK');
+    const jobTitleLower = job.title.toLowerCase();
+    let slackWebhook = null;
+
+    if (jobTitleLower.includes('frontend') || jobTitleLower.includes('backend') || jobTitleLower.includes('engineer') || jobTitleLower.includes('developer')) {
+      slackWebhook = DEV_WEBHOOK;
+      addLog(`[SLACK] 📢 개발팀 채널(DEV_SLACK_WEBHOOK)로 알림 발송 준비...`);
+    } else if (jobTitleLower.includes('design') || jobTitleLower.includes('designer')) {
+      slackWebhook = DESIGN_WEBHOOK;
+      addLog(`[SLACK] 📢 디자인팀 채널(DESIGN_SLACK_WEBHOOK)로 알림 발송 준비...`);
+    } else {
+      addLog(`[SLACK] ⚠️ 해당 직무(${job.title})에 매칭되는 슬랙 채널이 없어 기본 채널로 발송합니다.`);
+      slackWebhook = DEV_WEBHOOK; // 기본값
+    }
+
     if (slackWebhook) {
-      const startTime = format(new Date(selectedSlot.start), "yyyy-MM-dd HH:mm", { timeZone: "Asia/Seoul" });
+      const startDate = new Date(selectedSlot.start);
+      const endDate = new Date(selectedSlot.end);
+
+      const datePart = startDate.toLocaleDateString('ko-KR', {
+        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Seoul'
+      }).replace(/\. /g, '-').replace('.', '');
+
+      const startTimePart = startDate.toLocaleTimeString('ko-KR', {
+        hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Seoul'
+      });
+      
+      const endTimePart = endDate.toLocaleTimeString('ko-KR', {
+        hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Seoul'
+      });
+      
+      const finalTimeString = `${datePart} ${startTimePart} - ${endTimePart}`;
+
       const slackMessage = {
         text: `✅ 면접 일정 확정: ${applicant.name} - ${job.title}`,
         blocks: [
@@ -162,10 +232,9 @@ serve(async (req) => {
           { type: 'section', fields: [
               { type: 'mrkdwn', text: `*지원자:*\n${applicant.name}` },
               { type: 'mrkdwn', text: `*포지션:*\n${job.title}` },
-              { type: 'mrkdwn', text: `*면접 시간:*\n${startTime}` },
+              { type: 'mrkdwn', text: `*면접 시간:*\n${finalTimeString}` },
           ]},
           { type: 'actions', elements: [
-              { type: 'button', text: { type: 'plain_text', text: '📅 캘린더에서 보기' }, url: eventData.htmlLink, style: 'primary' },
               { type: 'button', text: { type: 'plain_text', text: '📄 지원서 보기' }, url: `http://localhost:5175/application/${applicationId}` },
           ]},
         ],
