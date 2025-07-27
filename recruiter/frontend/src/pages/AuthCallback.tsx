@@ -4,18 +4,21 @@ import { useAuthStore } from '../store/authStore';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const { setSession, setLoading } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
 
   useEffect(() => {
-    // onAuthStateChange가 App.tsx에서 모든 것을 처리하므로,
-    // 이 컴포넌트는 단순히 대시보드로 리디렉션하는 역할만 수행합니다.
-    // 세션 처리는 App.tsx에 위임합니다.
-    setLoading(true);
-    // 세션이 설정될 시간을 약간 기다린 후 이동
-    setTimeout(() => {
+    // 인증 상태(isLoading, isAuthenticated)가 변경될 때마다 이 효과가 실행됩니다.
+    
+    // 로딩이 끝났고, 성공적으로 인증되었다면 대시보드로 이동합니다.
+    if (!isLoading && isAuthenticated) {
       navigate('/dashboard', { replace: true });
-    }, 1000); 
-  }, [navigate, setLoading]);
+    }
+
+    // 로딩이 끝났는데, 인증되지 않았다면 (예: 에러 발생) 로그인 페이지로 돌려보냅니다.
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
