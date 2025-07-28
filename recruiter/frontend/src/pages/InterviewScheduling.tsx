@@ -19,6 +19,21 @@ interface ApplicantInfo {
   job_id: number; // 💡 jobId 추가
 }
 
+// ✨ [추가] 직무 제목을 실제 DB 부서명으로 매핑하는 헬퍼 함수
+const getDbDepartment = (jobTitle: string) => {
+  const departmentMapping: { [key: string]: string } = {
+    'Frontend Engineer': 'dev', 'Backend Engineer': 'dev', 'Design Lead': 'design',
+    'Product Manager': 'product', 'Data Analyst': 'data', 'QA Engineer': 'qa'
+  };
+  for (const key in departmentMapping) {
+    if (jobTitle.includes(key)) {
+      return departmentMapping[key];
+    }
+  }
+  return jobTitle.toLowerCase();
+};
+
+
 // DB에 저장된 면접 시간 슬롯
 interface AvailableInterviewSlot {
   id: number;
@@ -84,17 +99,21 @@ const InterviewScheduling = () => {
         setApplicant(applicantInfo);
         console.log('✅ 지원자 정보:', applicantInfo);
 
-        // 2. 이미 예약된 시간 목록 조회
-        console.log(`[DB] 📅 ${applicantInfo.department} 부서의 기예약 시간 조회`);
+        // ✨ [수정] 실제 '팀' 이름으로 예약된 시간을 조회
+        const dbDepartment = getDbDepartment(applicantInfo.job_title);
+        console.log(`[DB] 📅 ${dbDepartment} 팀의 기예약 시간 조회`);
         const { data: bookedSlots, error: bookedSlotsError } = await supabase
           .from('booked_interview_times')
-          .select('start_time')
-          .eq('department', applicantInfo.department);
+          .select('start_time, end_time')
+          .eq('department', dbDepartment); // ✨ 변환된 팀 이름으로 조회
         
         if (bookedSlotsError) throw new Error('기존 예약 정보를 가져오는데 실패했습니다.');
         
-        const bookedStartTimes = new Set(bookedSlots.map(s => s.start_time));
-        console.log(`[DB] ✅ 기예약 시간 ${bookedStartTimes.size}개 확인`);
+        const bookedIntervals = bookedSlots.map(s => ({
+          start: new Date(s.start_time),
+          end: new Date(s.end_time)
+        }));
+        console.log(`[DB] ✅ 기예약 시간 ${bookedIntervals.length}개 확인`);
 
         // 3. 선택 가능한 시간 목록 조회
         console.log('[DB] 🕐 선택 가능한 전체 시간 슬롯 조회');
@@ -109,15 +128,28 @@ const InterviewScheduling = () => {
           setAvailableSlots([]);
           return;
         }
+        
+        // 💡 겹치는 시간을 확인하는 헬퍼 함수
+        const isOverlapping = (slot: TimeSlot, intervals: {start: Date, end: Date}[]) => {
+          const slotStart = new Date(slot.start);
+          const slotEnd = new Date(slot.end);
+          for (const interval of intervals) {
+            // (A시작 < B종료 AND A종료 > B시작) 이면 겹침
+            if (slotStart < interval.end && slotEnd > interval.start) {
+              return true;
+            }
+          }
+          return false;
+        };
 
-        // 4. 기예약된 시간을 제외한 최종 슬롯 계산
+        // 4. 기예약된 시간을 '제외'한 최종 슬롯 계산
         const filteredSlots: TimeSlot[] = availableSlotsFromDB
           .map((slot: AvailableInterviewSlot) => ({
             start: slot.slot_start,
             end: slot.slot_end,
             available: slot.is_available,
           }))
-          .filter(slot => !bookedStartTimes.has(slot.start)); // 💡 여기서 중복 제거
+          .filter(slot => !isOverlapping(slot, bookedIntervals)); // ✨ 겹침 확인 로직으로 변경
 
         setAvailableSlots(filteredSlots);
         console.log(`[UI] ✅ 최종적으로 선택 가능한 시간 ${filteredSlots.length}개 표시`);
@@ -147,11 +179,27 @@ const InterviewScheduling = () => {
           filter: `department=eq.${applicant.department}` 
         },
         (payload) => {
-          const newBookedSlot = payload.new as { start_time: string };
-          console.log('[REALTIME] ⚡️ 실시간 예약 발생! 내 화면에서 해당 슬롯 제거:', newBookedSlot.start_time);
+          const newBookedSlot = payload.new as { start_time: string, end_time: string };
+          console.log('[REALTIME] ⚡️ 실시간 예약 발생!', newBookedSlot);
+
+          const newBookedInterval = {
+            start: new Date(newBookedSlot.start_time),
+            end: new Date(newBookedSlot.end_time)
+          };
+
+          // ✨ 실시간으로 겹치는 모든 슬롯 제거
           setAvailableSlots(prevSlots =>
-            prevSlots.filter(slot => slot.start !== newBookedSlot.start_time)
+            prevSlots.filter(slot => {
+              const slotStart = new Date(slot.start);
+              const slotEnd = new Date(slot.end);
+              const isOverlapping = slotStart < newBookedInterval.end && slotEnd > newBookedInterval.start;
+              if (isOverlapping) {
+                console.log(`[REALTIME] 겹치는 슬롯 제거: ${slot.start}`);
+              }
+              return !isOverlapping;
+            })
           );
+          
           // 내가 선택한 슬롯이 방금 예약되었다면, 내 선택도 취소
           if (selectedSlot?.start === newBookedSlot.start_time) {
             setSelectedSlot(null);

@@ -12,20 +12,24 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// 헬퍼 함수: 부서별 면접관 조회
-const getInterviewersByDepartment = async (supabase: any, department: any) => {
+// ✨ [추가] 직무 제목을 실제 DB 부서명으로 매핑하는 헬퍼 함수
+const getDbDepartment = (jobTitle: string) => {
   const departmentMapping: { [key: string]: string } = {
     'Frontend Engineer': 'dev', 'Backend Engineer': 'dev', 'Design Lead': 'design',
     'Product Manager': 'product', 'Data Analyst': 'data', 'QA Engineer': 'qa'
   };
-  let dbDepartment = '';
   for (const key in departmentMapping) {
-    if (department.includes(key)) {
-      dbDepartment = departmentMapping[key];
-      break;
+    if (jobTitle.includes(key)) {
+      return departmentMapping[key];
     }
   }
-  if (!dbDepartment) dbDepartment = department.toLowerCase();
+  return jobTitle.toLowerCase(); // 매핑되는 것이 없으면 소문자로 변환하여 반환
+};
+
+
+// 헬퍼 함수: 부서별 면접관 조회
+const getInterviewersByDepartment = async (supabase: any, department: any) => {
+  const dbDepartment = getDbDepartment(department); // ✨ 헬퍼 함수 사용
   
   const { data: users, error } = await supabase.from('users').select('id, name, email, role, department')
     .eq('department', dbDepartment).in('role', ['manager', 'viewer']);
@@ -144,26 +148,31 @@ serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    // --- 1. DB에 면접 시간 예약 (동시성 제어) ---
-    const { error: bookingError } = await supabase
-      .from('booked_interview_times')
-      .insert({
-        application_id: applicationId,
-        job_id: jobId,
-        department: department,
-        start_time: startTime,
-        end_time: endTime,
+    // ✨ [수정] 테이블에 직접 INSERT하는 대신, 중복을 확인하는 DB 함수를 호출합니다.
+    const { data: bookingResult, error: rpcError } = await supabase
+      .rpc('book_interview_slot', {
+        p_application_id: applicationId,
+        p_job_id: jobId,
+        p_department: getDbDepartment(department), // 실제 팀 이름으로 전달
+        p_start_time: startTime,
+        p_end_time: endTime
       });
 
-    if (bookingError) {
-      if (bookingError.code === '23505') {
-        return new Response(
-          JSON.stringify({ success: false, message: '이미 예약된 시간입니다.', error_code: 'SLOT_ALREADY_BOOKED' }),
-          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      throw new Error(`DB 예약 실패: ${bookingError.message}`);
+    if (rpcError) {
+      throw new Error(`DB 함수 호출 실패: ${rpcError.message}`);
     }
+
+    // DB 함수가 중복을 감지하여 실패 메시지를 반환한 경우
+    if (!bookingResult.success) {
+      console.warn('⚠️ 동시 예약 시도 발생 (DB 함수 감지):', bookingResult.message);
+      return new Response(
+        JSON.stringify(bookingResult),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('✅ DB 함수를 통해 면접 시간 예약 성공:', bookingResult);
+
 
     // --- 2. 필요한 정보 조회 ---
     const { data: appData, error: appError } = await supabase
