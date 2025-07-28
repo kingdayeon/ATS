@@ -22,6 +22,7 @@ const Dashboard = () => {
     fetchJobs,
     setSelectedJob,
     getApplicationsByStatus,
+    getApplicationsByFinalStatus, // 추가
     getJobById,
     updateApplicationStatus,
     getApplicationById
@@ -166,6 +167,7 @@ const Dashboard = () => {
           {/* 📋 상태별 지원자 컬럼들 */}
           <DashboardGrid
             getApplicationsByStatus={getApplicationsByStatus}
+            getApplicationsByFinalStatus={getApplicationsByFinalStatus} // 추가
             selectedJob={selectedJob}
             onStatusChange={handleStatusChange}
           />

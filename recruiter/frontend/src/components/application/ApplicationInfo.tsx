@@ -1,34 +1,33 @@
-import type { Application, Job, ApplicationStatus } from '../../../../../shared/types';
+import type { Application, Job } from '../../../../../shared/types';
 import { getDepartmentColor } from '../../../../../shared/utils';
+import FinalStatusBadge from '../ui/FinalStatusBadge'; // FinalStatusBadge import
 
 interface ApplicationInfoProps {
   application: Application;
   job: Job;
-  getStatusText: (status: ApplicationStatus) => string;
-  getStatusColor: (status: ApplicationStatus) => string;
+  getStatusText: (status: any) => string;
+  getStatusColor: (status: any) => string;
 }
 
-const ApplicationInfo = ({ 
-  application, 
-  job, 
-  getStatusText, 
-  getStatusColor 
-}: ApplicationInfoProps) => {
+const ApplicationInfo = ({ application, job, getStatusText, getStatusColor }: ApplicationInfoProps) => {
+  const statusText = getStatusText(application.status);
+  const statusColor = getStatusColor(application.status);
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {/* 프로필 헤더 */}
       <div className="text-center mb-6">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-gray-900">{application.name}</h2>
-          {application.english_name && (
-            <p className="text-gray-600 mt-1">{application.english_name}</p>
+        <h2 className="text-2xl font-bold text-gray-900">{application.name}</h2>
+        <p className="text-sm text-gray-500 mt-1">{application.english_name}</p>
+        <div className="mt-4">
+          {application.final_status !== 'pending' ? (
+            <FinalStatusBadge status={application.final_status} />
+          ) : (
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>
+              {statusText}
+            </span>
           )}
         </div>
-        
-        {/* 상태 뱃지 */}
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.status)}`}>
-          {getStatusText(application.status)}
-        </span>
       </div>
 
       {/* 기본 정보 */}

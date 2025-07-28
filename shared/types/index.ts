@@ -4,7 +4,9 @@ export type ExperienceLevel = "신입" | "경력 1년 이상" | "경력 3년 이
 export type CompanyType = "29CM" | "무신사" | "무신사 스탠다드" | "무신사 로지스틱스" | "무신사 페이먼츠";
 export type PortfolioType = "file" | "link";
 export type UserRole = 'admin' | 'manager' | 'viewer';
-export type ApplicationStatus = 'submitted' | 'interview' | 'rejected' | 'accepted';
+export type ApplicationStatus = 'submitted' | 'interview' | 'accepted' | 'rejected';
+
+export type FinalStatus = 'pending' | 'hired' | 'offer_declined' | 'rejected';
 
 export type ReferralSource = 
   | "무신사 채용팀"
@@ -67,6 +69,7 @@ export interface Application {
   required_consent: boolean;
   optional_consent: boolean;
   status: ApplicationStatus;
+  final_status: FinalStatus;
   created_at: string;
   updated_at: string;
 }

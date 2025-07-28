@@ -23,6 +23,11 @@ const generateInterviewToken = (applicationId) => {
   });
 };
 
+// 헬퍼 함수 추가: 토큰 생성
+const generateToken = (applicationId: string, secret: string) => {
+  return btoa(`${applicationId}-${secret}`);
+};
+
 // 🎯 부서별 면접관 조회
 const getInterviewersByDepartment = async (supabase, department, addLog) => {
   addLog(`[DB] 📋 === DB에서 ${department} 부서 면접관 조회 시작 ===`);
@@ -559,6 +564,52 @@ serve(async (req) => {
         break;
 
       case 'accepted':
+        addLog('🎉 === 입사 제안 상태 처리 ===');
+        
+        const secretKey = Deno.env.get("FUNCTION_SECRET_KEY") ?? "default-secret";
+        const token = generateToken(String(applicationId), secretKey);
+        // ✨ 프론트엔드 URL 포트 번호 수정
+        const frontendUrl = 'http://localhost:5175'; // 5174 -> 5175
+
+        const acceptUrl = `${frontendUrl}/finalize-status/${applicationId}/hired/${token}`;
+        const declineUrl = `${frontendUrl}/finalize-status/${applicationId}/offer_declined/${token}`;
+
+        emailSubject = `[${company}] 무신사 입사 제안 안내`;
+        emailContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px;">
+            <div style="background: #000; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="margin: 0; font-size: 24px;">🎉 입사를 제안합니다!</h1>
+            </div>
+            <div style="padding: 30px; background: #f9f9f9;">
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                안녕하세요 <strong>${applicantName}</strong>님,
+              </p>
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                무신사 ${jobTitle} 포지션에 최종 합격하신 것을 진심으로 축하드립니다.
+              </p>
+              <div style="background: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0;">
+                <h3 style="margin: 0 0 10px 0; color: #1f2937;">📝 입사 의사 확인</h3>
+                <p style="margin: 0; color: #6b7280;">
+                  아래 버튼을 통해 입사 의사를 전달해주세요.
+                </p>
+              </div>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${acceptUrl}" style="background: #22c55e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 15px;">
+                  ✅ 입사 결정
+                </a>
+                <a href="${declineUrl}" style="background: #ef4444; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                  ❌ 입사 취소
+                </a>
+              </div>
+              <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                ${applicantName}님과 함께하게 되기를 기대합니다!
+              </p>
+            </div>
+          </div>
+        `;
+        slackMessage = `🎉 *입사 제안 알림*\n\n*지원자:* ${applicantName}\n*포지션:* ${jobTitle}\n\n지원자에게 입사 수락/취소 이메일이 발송되었습니다.`;
+        break;
+
       case 'offer':
         addLog('🎉 === 최종 합격 상태 처리 ===');
         
@@ -631,9 +682,14 @@ serve(async (req) => {
     });
 
     if (!emailResponse.ok) {
-      const errorData = await emailResponse.json();
-      addLog(`❌ 이메일 발송 실패: ${JSON.stringify(errorData)}`);
-      throw new Error(`이메일 발송 실패: ${JSON.stringify(errorData)}`);
+      const responseText = await emailResponse.text();
+      addLog(`❌ 이메일 발송 실패 Raw Response: ${responseText}`);
+      try {
+        const errorData = JSON.parse(responseText);
+        throw new Error(`이메일 발송 실패: ${JSON.stringify(errorData)}`);
+      } catch (e) {
+        throw new Error(`이메일 발송 서버가 JSON이 아닌 응답을 반환했습니다: ${responseText}`);
+      }
     }
 
     const emailResult = await emailResponse.json();

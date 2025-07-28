@@ -77,7 +77,7 @@ const StatusManagement = ({
   const getNextStatusText = (status: ApplicationStatus): string | null => {
     switch (status) {
       case 'submitted': return '면접 승인';
-      case 'interview': return '최종 합격';
+      case 'interview': return '입사 제안';
       default: return null;
     }
   };

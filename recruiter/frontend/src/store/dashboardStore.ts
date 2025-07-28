@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../../../shared/lib/supabase';
 // import { sendStatusChangeEmail } from '../../../../shared/services/email'; // 이메일 직접 발송 로직은 Edge Function으로 이동했으므로 주석 처리 또는 삭제
-import type { Application, Job, ApplicationStatus } from '../../../../shared/types';
+import type { Application, Job, ApplicationStatus, FinalStatus } from '../../../../shared/types';
 import type { InterviewSettings } from '../services/calendar';
 import { useAuthStore } from './authStore';
 
@@ -22,6 +22,7 @@ interface DashboardState {
   // 📝 액션 - 선택/필터링
   setSelectedJob: (jobId: number) => void;
   getApplicationsByStatus: (status: ApplicationStatus) => Application[];
+  getApplicationsByFinalStatus: (finalStatus: FinalStatus) => Application[];
   getApplicationById: (id: number) => Application | null;
   getJobById: (id: number) => Job | null;
   
@@ -71,7 +72,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       const { data: applications, error } = await supabase
         .from('applications')
-        .select('*')
+        .select('*') // 'final_status'를 포함한 모든 컬럼을 가져옴
         .eq('job_id', jobId);
 
       if (error) throw error;
@@ -92,7 +93,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   // 🔍 상태별 지원자 필터링
   getApplicationsByStatus: (status: ApplicationStatus) => {
     const { applications } = get();
-    return applications.filter(app => app.status === status);
+    // '최종 결과'가 결정된 지원자는 기존 칸반 보드에 나타나지 않도록 필터링
+    return applications.filter(app => app.status === status && app.final_status === 'pending');
+  },
+
+  // 🚀 추가: 최종 결정된 지원자를 필터링하는 getter
+  getApplicationsByFinalStatus: (finalStatus: FinalStatus) => {
+    const { applications } = get();
+    return applications.filter(app => app.final_status === finalStatus);
   },
 
   // 🔍 지원자 ID로 찾기

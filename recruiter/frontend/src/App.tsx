@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import ApplicationDetail from './pages/ApplicationDetail';
+import FinalizeStatus from './pages/FinalizeStatus'; // 페이지 import
 import InterviewScheduling from './pages/InterviewScheduling';
 import InterviewScheduled from './pages/InterviewScheduled';
 
@@ -68,6 +69,7 @@ function App() {
         {/* 공개 라우트 */}
         <Route path="/interview-scheduling/:applicationId/:token" element={<InterviewScheduling />} />
         <Route path="/interview-scheduled/:applicationId" element={<InterviewScheduled />} />
+        <Route path="/finalize-status/:applicationId/:finalStatus/:token" element={<FinalizeStatus />} />
         
         {/* 인증 필요 라우트 */}
         {isAuthenticated ? (
