@@ -315,11 +315,12 @@ serve(async (req) => {
       jobTitle, 
       company, 
       newStatus, 
-      applicationId 
+      applicationId,
+      interviewDetails, // 💡 프론트에서 직접 전달받는 면접 정보
     } = await req.json();
 
     addLog('🚀 === 상태 변경 이메일 발송 요청 시작 ===');
-    addLog(`📊 요청 데이터: ${JSON.stringify({ applicantName, applicantEmail, jobTitle, company, newStatus, applicationId })}`);
+    addLog(`📊 요청 데이터: ${JSON.stringify({ applicantName, applicantEmail, jobTitle, company, newStatus, applicationId, interviewDetails })}`);
   
     // Supabase 클라이언트 초기화
     const supabase = createClient(
@@ -338,19 +339,22 @@ serve(async (req) => {
       case 'interview':
         addLog('🎯 === 면접 진행 상태 처리 시작 ===');
         
-        // 🔍 DB에서 면접 설정 조회
-        addLog('📦 DB에서 면접 설정 조회 중...');
-        const { data: interviewSettings, error: settingsError } = await supabase
-          .from('interview_settings')
-          .select('*')
-          .eq('application_id', applicationId)
-          .single();
+        // 💣 [제거] DB에서 면접 설정 조회하는 기존 로직
+        // addLog('📦 DB에서 면접 설정 조회 중...');
+        // const { data: interviewSettings, error: settingsError } = await supabase
+        //   .from('interview_settings')
+        //   .select('*')
+        //   .eq('application_id', applicationId)
+        //   .single();
+        //
+        // if (settingsError || !interviewSettings) {
+        //   addLog(`❌ 면접 설정 조회 실패: ${settingsError?.message || '데이터 없음'}`);
+        //   throw new Error('면접 설정을 찾을 수 없습니다. 면접 일정을 다시 설정해주세요.');
+        // }
 
-        if (settingsError || !interviewSettings) {
-          addLog(`❌ 면접 설정 조회 실패: ${settingsError?.message || '데이터 없음'}`);
-          throw new Error('면접 설정을 찾을 수 없습니다. 면접 일정을 다시 설정해주세요.');
-        }
-        addLog(`✅ DB에서 면접 설정 조회 완료: ${JSON.stringify(interviewSettings)}`);
+        // ✨ [변경] 프론트에서 직접 받은 interviewDetails 사용
+        const interviewSettings = interviewDetails;
+        addLog(`✅ 프론트엔드로부터 직접 면접 설정 수신 완료: ${JSON.stringify(interviewSettings)}`);
 
         // 1. 면접관 조회
         addLog('👥 STEP 1: 면접관 조회 시작...');

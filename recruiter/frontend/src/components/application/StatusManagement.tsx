@@ -29,19 +29,20 @@ const StatusManagement = ({
 
   const handleConfirmSchedule = async (settings: InterviewSettings) => {
     try {
-      // 1. 먼저 면접 설정을 DB에 저장
-      await supabase.from('interview_settings').upsert({
-        application_id: applicationId,
-        date_range_start: settings.dateRange.start,
-        date_range_end: settings.dateRange.end,
-        time_range_start: settings.timeRange.start,
-        time_range_end: settings.timeRange.end,
-        duration: settings.duration,
-        department: department,
-      }, { onConflict: 'application_id' });
+      // 💣 [제거] 더 이상 DB에 직접 면접 설정을 저장하지 않습니다.
+      // await supabase.from('interview_settings').upsert({
+      //   application_id: applicationId,
+      //   date_range_start: settings.dateRange.start,
+      //   date_range_end: settings.dateRange.end,
+      //   time_range_start: settings.timeRange.start,
+      //   time_range_end: settings.timeRange.end,
+      //   duration: settings.duration,
+      //   department: department,
+      // }, { onConflict: 'application_id' });
 
-      // 2. 면접 상태로 변경
-      onStatusChange('interview');
+      // ✨ [변경] onStatusChange 함수에 면접 설정(settings)을 직접 전달합니다.
+      await onStatusChange('interview', settings);
+      
       setModalOpen(false);
     } catch (error: any) {
       console.error('면접 승인 실패:', error);
@@ -66,6 +67,8 @@ const StatusManagement = ({
     switch (status) {
       case 'submitted': return 'interview';
       case 'interview': return 'accepted';
+      // ✨ [수정] 최종 합격 후 다음 상태는 없으므로 null 반환
+      case 'accepted': return null; 
       default: return null;
     }
   };
@@ -85,7 +88,7 @@ const StatusManagement = ({
       console.log('면접 일정 설정 모달 표시');
       handleOpenModal();
     } else {
-      // 면접이 아닌 경우 바로 상태 변경
+      // ✨ [변경] getNextStatus를 통해 다음 상태가 있는지 확인하고 변경
       const nextStatus = getNextStatus(currentStatus);
       if (nextStatus) {
         onStatusChange(nextStatus);

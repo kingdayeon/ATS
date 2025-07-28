@@ -96,20 +96,14 @@ const Dashboard = () => {
   };
 
   // 📅 면접 일정 설정 완료 핸들러
-  const handleScheduleConfirm = async () => {
+  const handleScheduleConfirm = async (settings: InterviewSettings) => { // ✨ settings를 인자로 받도록 수정
     try {
       if (!scheduleModal.applicationId) return;
 
-      console.log('📅 대시보드에서 면접 일정 설정 완료:', scheduleModal);
+      console.log('📅 대시보드에서 면접 일정 설정 완료:', { ...scheduleModal, settings });
       
-      // TODO: 면접 일정 정보를 DB에 저장
-      // await saveInterviewSchedule(settings);
-      
-      // TODO: 일정 조율 링크가 포함된 이메일 발송
-      // await sendInterviewScheduleEmail(application, job, settings);
-
-      // 면접 상태로 변경
-      await updateApplicationStatus(scheduleModal.applicationId, 'interview');
+      // ✨ updateApplicationStatus 호출 시 settings를 함께 전달
+      await updateApplicationStatus(scheduleModal.applicationId, 'interview', settings);
       
       // 모달 닫기
       setScheduleModal({
@@ -187,7 +181,7 @@ const Dashboard = () => {
           applicantName: '',
           department: ''
         })}
-        onConfirm={handleScheduleConfirm}
+        onConfirm={(settings) => handleScheduleConfirm(settings)} // ✨ onConfirm이 settings를 전달하도록 수정
         applicationId={scheduleModal.applicationId || 0}
         department={scheduleModal.department}
         applicantName={scheduleModal.applicantName}

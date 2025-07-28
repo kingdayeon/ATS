@@ -31,7 +31,8 @@ const ApplicationDetail = () => {
   const [localApplication, setLocalApplication] = useState<Application | null>(null);
   const [localJob, setLocalJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  // 💣 [제거] 더 이상 이 컴포넌트에서 모달 상태를 관리하지 않습니다.
+  // const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   // 스토어 또는 로컬 상태에서 데이터 가져오기
   const application = id ? getApplicationById(parseInt(id)) || localApplication : null;
@@ -103,35 +104,33 @@ const ApplicationDetail = () => {
     }
   }, [id, getApplicationById]);
 
-  // ⚡ 상태 변경 핸들러 (면접 일정 설정 포함)
-  const handleStatusChange = async (newStatus: Application['status']) => {
-    if (newStatus === 'interview') {
-      setScheduleModalOpen(true);
-    } else {
+  // ✨ [수정] 상태 변경 핸들러를 하나로 통합하고, interviewSettings를 받도록 수정
+  const handleStatusChange = async (newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => {
     if (!application) return;
     try {
-        console.log('상태 변경 시작:', { newStatus });
-        await updateApplicationStatus(application.id, newStatus);
+      console.log('상태 변경 시작:', { newStatus, interviewSettings });
+      // 스토어의 함수를 호출할 때 interviewSettings를 함께 전달
+      await updateApplicationStatus(application.id, newStatus, interviewSettings);
       console.log('✅ 상태 변경 완료!');
     } catch (error) {
       console.error('상태 변경 실패:', error);
       alert('상태 변경에 실패했습니다.');
-      }
     }
   };
 
-  const handleScheduleConfirm = async () => {
-    if (!application) return;
-    try {
-      console.log('면접 일정 확정 시작');
-      await updateApplicationStatus(application.id, 'interview');
-      setScheduleModalOpen(false);
-      console.log('✅ 면접 일정 확정 완료!');
-    } catch (error) {
-      console.error('면접 일정 확정 실패:', error);
-      alert('면접 일정 확정에 실패했습니다.');
-    }
-  };
+  // 💣 [제거] 이 함수는 더 이상 사용되지 않으며, StatusManagement 컴포넌트 내부 로직으로 통합되었습니다.
+  // const handleScheduleConfirm = async () => {
+  //   if (!application) return;
+  //   try {
+  //     console.log('면접 일정 확정 시작');
+  //     await updateApplicationStatus(application.id, 'interview');
+  //     setScheduleModalOpen(false);
+  //     console.log('✅ 면접 일정 확정 완료!');
+  //   } catch (error) {
+  //     console.error('면접 일정 확정 실패:', error);
+  //     alert('면접 일정 확정에 실패했습니다.');
+  //   }
+  // };
 
   // 🔄 로딩 중
   if (isLoading) {
@@ -175,6 +174,14 @@ const ApplicationDetail = () => {
             getStatusText={getStatusText}
             getStatusColor={getStatusColor}
           />
+          {/* ✨ [수정] StatusManagement에 onStatusChange 핸들러를 전달합니다. */}
+          <StatusManagement
+            currentStatus={application.status}
+            onStatusChange={handleStatusChange}
+            applicationId={application.id}
+            applicantName={application.name}
+            department={job.department}
+          />
         </div>
 
         {/* 오른쪽: PDF 뷰어 */}
@@ -182,7 +189,8 @@ const ApplicationDetail = () => {
           <PDFViewer application={application} />
         </div>
       </div>
-      {isScheduleModalOpen && (
+      {/* 💣 [제거] 모달 호출 로직은 StatusManagement 컴포넌트로 이동했습니다. */}
+      {/* {isScheduleModalOpen && (
         <InterviewScheduleModal 
           isOpen={isScheduleModalOpen}
           onClose={() => setScheduleModalOpen(false)}
@@ -191,7 +199,7 @@ const ApplicationDetail = () => {
           applicantName={application.name}
           department={job.department}
         />
-      )}
+      )} */}
     </div>
   );
 };

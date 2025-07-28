@@ -161,39 +161,32 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // 👤 현재 사용자 세션에서 provider_token 및 이메일 가져오기
       const session = useAuthStore.getState().session;
       const user = useAuthStore.getState().user;
-      const providerToken = session?.provider_token;
+      // 💣 더 이상 사용되지 않음
+      // const providerToken = session?.provider_token; 
       const userEmail = user?.email;
 
-      if (newStatus === 'interview' && (!providerToken || !userEmail)) {
-        throw new Error('Google 계정 인증 정보(토큰 또는 이메일)를 찾을 수 없습니다. 다시 로그인해주세요.');
+      if (newStatus === 'interview' && !userEmail) { // 🔑 토큰 대신 이메일 존재 여부만 체크
+        throw new Error('Google 계정 인증 정보(이메일)를 찾을 수 없습니다. 다시 로그인해주세요.');
       }
       
       // 3. 상태 변경 이메일 발송 (Edge Function 호출)
       console.log('📧 상태 변경 이메일 발송 시작...')
-      console.log('📤 Edge Function 호출 데이터:', {
+      
+      // ✨ [변경] 백엔드 함수 시그니처에 맞춰 interviewDetails로 이름 변경
+      const bodyPayload = {
         applicantName: application.name,
         applicantEmail: application.email,
         jobTitle: (application.jobs as any)?.title || '',
         company: '무신사',
         newStatus,
         applicationId,
-        interviewSettings, // 면접 설정값 전달
-        providerToken, // 🔑 provider_token 전달
-        userEmail,     // 👤 현재 로그인한 사용자 이메일 전달
-      })
+        interviewDetails: interviewSettings, // ✨ 이름 변경 및 전달
+      };
+
+      console.log('📤 Edge Function 호출 데이터:', bodyPayload)
 
       const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-status-change-email', {
-        body: {
-          applicantName: application.name,
-          applicantEmail: application.email,
-          jobTitle: (application.jobs as any)?.title || '',
-          company: '무신사',
-          newStatus,
-          applicationId,
-          interviewSettings, // body에도 면접 설정값 추가
-          providerToken, // 🔑 provider_token 전달
-          userEmail,     // 👤 현재 로그인한 사용자 이메일 전달
-        }
+        body: bodyPayload
       })
 
       console.log('📨 Edge Function 응답 원본:', { data: emailResult, error: emailError })

@@ -48,7 +48,20 @@ const InterviewScheduleModal = ({
       alert('날짜 및 시간 범위를 올바르게 설정해주세요.');
       return;
     }
-    onConfirm(settings);
+    
+    // ✨ [수정] 백엔드가 이해할 수 있는 평평한 구조로 객체를 변환하여 전달
+    const settingsForBackend: any = {
+      date_range_start: settings.dateRange.start,
+      date_range_end: settings.dateRange.end,
+      time_range_start: settings.timeRange.start,
+      time_range_end: settings.timeRange.end,
+      duration: settings.duration,
+      // 기존에 있던 다른 정보들도 함께 전달
+      applicationId: settings.applicationId,
+      department: settings.department,
+    };
+
+    onConfirm(settingsForBackend);
     onClose();
   };
 
