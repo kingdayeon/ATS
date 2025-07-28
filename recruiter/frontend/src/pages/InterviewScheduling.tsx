@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import type { TimeSlot } from '../services/calendar';
+import type { TimeSlot } from '../../../../shared/types';
 import { supabase } from '../../../../shared/lib/supabase';
 import { validateInterviewToken } from '../../../../shared/utils';
 import LoadingSpinner from '../components/common/LoadingSpinner';

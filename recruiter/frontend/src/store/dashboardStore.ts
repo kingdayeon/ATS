@@ -1,8 +1,13 @@
 import { create } from 'zustand';
 import { supabase } from '../../../../shared/lib/supabase';
 // import { sendStatusChangeEmail } from '../../../../shared/services/email'; // 이메일 직접 발송 로직은 Edge Function으로 이동했으므로 주석 처리 또는 삭제
-import type { Application, Job, ApplicationStatus, FinalStatus } from '../../../../shared/types';
-import type { InterviewSettings } from '../services/calendar';
+import type {
+  ApplicationStatus,
+  Application,
+  Job,
+  FinalStatus, // 추가
+  InterviewSettings, // shared/types에서 직접 가져오기
+} from '../../../../shared/types';
 import { useAuthStore } from './authStore';
 
 interface DashboardState {

@@ -308,3 +308,24 @@ export const DEPARTMENT_MAPPING = {
   Design: ['Design', 'Product Designer'],
   HR: [], // admin은 모든 부서 접근 가능
 } as const; 
+
+// calendar.ts에서 이동된 타입들
+export interface InterviewSettings {
+  dateRange: {
+    start: string; // YYYY-MM-DD
+    end: string;   // YYYY-MM-DD
+  };
+  timeRange: {
+    start: string; // HH:mm
+    end: string;   // HH:mm
+  };
+  duration: number; // 분 단위
+  applicationId: number;
+  department: string;
+}
+
+export interface TimeSlot {
+  start: string; // ISO 문자열
+  end: string;   // ISO 문자열
+  available: boolean;
+} 

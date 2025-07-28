@@ -1,6 +1,7 @@
 import { format, parseISO, addHours } from 'date-fns';
 import { supabase } from '../../../../shared/lib/supabase';
 import { requestGoogleAuth, callGoogleCalendarAPI, hasValidToken } from './googleAuth';
+import type { InterviewSettings, TimeSlot } from '../../../../shared/types'; // shared/types에서 가져오기
 
 // 면접관 정보 타입
 interface Interviewer {
@@ -12,27 +13,9 @@ interface Interviewer {
   role: 'manager' | 'member';
 }
 
-// 면접 설정 타입
-interface InterviewSettings {
-  dateRange: {
-    start: string; // YYYY-MM-DD
-    end: string;   // YYYY-MM-DD
-  };
-  timeRange: {
-    start: string; // HH:mm
-    end: string;   // HH:mm
-  };
-  duration: number; // 분 단위 (60, 90, 120 등)
-  applicationId: number;
-  department: string;
-}
-
-// 면접 가능 시간 슬롯
-interface TimeSlot {
-  start: string; // ISO 문자열
-  end: string;   // ISO 문자열
-  available: boolean;
-}
+// 💣 [제거] 아래 타입들은 shared/types/index.ts로 이동했습니다.
+// interface InterviewSettings { ... }
+// interface TimeSlot { ... }
 
 // 🎯 DB에서 부서별 면접관 조회
 export const getInterviewersByDepartment = async (department: string): Promise<Interviewer[]> => {

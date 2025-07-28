@@ -1,4 +1,4 @@
-import type { CompanyType, ReferralSource } from '../types';
+import type { CompanyType, ReferralSource, ApplicationStatus, FinalStatus } from '../types';
 
 // ===== COMPANY CONSTANTS =====
 export const COMPANIES: CompanyType[] = [
@@ -82,4 +82,14 @@ export const STATUS_DISPLAY_NAMES: Record<string, string> = {
   'interview': '면접 진행',
   'accepted': '최종 합격',
   'rejected': '불합격'
+}; 
+
+export const STATUS_MAP: Record<ApplicationStatus | FinalStatus, { text: string; className: string }> = {
+  submitted: { text: '지원 접수', className: 'bg-gray-100 text-gray-800' },
+  interview: { text: '면접 진행', className: 'bg-yellow-100 text-yellow-800' },
+  accepted: { text: '입사 제안', className: 'bg-purple-100 text-purple-800' },
+  rejected: { text: '불합격', className: 'bg-red-100 text-red-800' },
+  hired: { text: '입사 결정', className: 'bg-green-100 text-green-800' },
+  offer_declined: { text: '입사 취소', className: 'bg-yellow-100 text-yellow-800' },
+  pending: { text: '진행중', className: 'hidden' }, // pending은 보통 표시되지 않음
 }; 

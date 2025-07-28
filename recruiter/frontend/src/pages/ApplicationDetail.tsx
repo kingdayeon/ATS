@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import type { ApplicationStatus, Application, Job } from '../../../../shared/types';
+import type { ApplicationStatus, Application, Job, InterviewSettings } from '../../../../shared/types';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
 import { supabase } from '../../../../shared/lib/supabase';
-import type { InterviewSettings } from '../services/calendar';
+// 💣 [제거] import type { InterviewSettings } from '../services/calendar';
 
 // 분리된 컴포넌트들
 import ApplicationHeader from '../components/application/ApplicationHeader';

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import type { ApplicationStatus, Application } from '../../../../shared/types';
-import type { InterviewSettings } from '../services/calendar';
+import type { ApplicationStatus, Application, InterviewSettings } from '../../../../shared/types';
+// 💣 [제거] import type { InterviewSettings } from '../services/calendar';
 
 // 컴포넌트들
 import DashboardHeader from '../components/ui/DashboardHeader';
