@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext", "dom"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["https://esm.sh/v135/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts"]
+  },
+  "include": ["**/*.ts"]
+} 

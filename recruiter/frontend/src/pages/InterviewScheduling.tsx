@@ -16,6 +16,7 @@ interface ApplicantInfo {
   email: string;
   job_title: string;
   department: string;
+  job_id: number; // 💡 jobId 추가
 }
 
 // DB에 저장된 면접 시간 슬롯
@@ -56,12 +57,13 @@ const InterviewScheduling = () => {
         setIsLoading(true);
         console.log(`📋 면접 일정 조회: applicationId=${applicationId}`);
 
-        // 지원자 정보 조회
+        // 1. 지원자 정보 조회 (job_id 포함)
         const { data: application, error: appError } = await supabase
           .from('applications')
           .select(`
             id, name, email,
             jobs:job_id (
+              id,
               title,
               department
             )
@@ -69,50 +71,56 @@ const InterviewScheduling = () => {
           .eq('id', appIdNum)
           .single();
 
-        if (appError || !application) {
-          throw new Error('지원서를 찾을 수 없습니다.');
-        }
+        if (appError || !application) throw new Error('지원서를 찾을 수 없습니다.');
 
         const applicantInfo: ApplicantInfo = {
           id: application.id,
           name: application.name,
           email: application.email,
           job_title: (application.jobs as any)?.title || '',
-          department: (application.jobs as any)?.department || ''
+          department: (application.jobs as any)?.department || '',
+          job_id: (application.jobs as any)?.id, // 💡 jobId 저장
         };
-
         setApplicant(applicantInfo);
         console.log('✅ 지원자 정보:', applicantInfo);
 
-        // 🕐 DB에서 미리 계산된 면접 가능 시간 조회
-        console.log('📅 DB에서 사전 계산된 면접 시간 조회 중...');
+        // 2. 이미 예약된 시간 목록 조회
+        console.log(`[DB] 📅 ${applicantInfo.department} 부서의 기예약 시간 조회`);
+        const { data: bookedSlots, error: bookedSlotsError } = await supabase
+          .from('booked_interview_times')
+          .select('start_time')
+          .eq('department', applicantInfo.department);
         
-        const { data: slots, error: slotsError } = await supabase
+        if (bookedSlotsError) throw new Error('기존 예약 정보를 가져오는데 실패했습니다.');
+        
+        const bookedStartTimes = new Set(bookedSlots.map(s => s.start_time));
+        console.log(`[DB] ✅ 기예약 시간 ${bookedStartTimes.size}개 확인`);
+
+        // 3. 선택 가능한 시간 목록 조회
+        console.log('[DB] 🕐 선택 가능한 전체 시간 슬롯 조회');
+        const { data: availableSlotsFromDB, error: slotsError } = await supabase
           .from('interview_available_slots')
           .select('*')
           .eq('application_id', appIdNum)
-          .eq('is_available', true)
           .order('slot_start', { ascending: true });
 
-        if (slotsError) {
-          console.error('면접 시간 조회 실패:', slotsError);
-          throw new Error('면접 시간을 조회할 수 없습니다.');
+        if (slotsError) throw new Error('면접 시간을 조회할 수 없습니다.');
+        if (!availableSlotsFromDB) {
+          setAvailableSlots([]);
+          return;
         }
 
-        if (!slots || slots.length === 0) {
-          console.warn('사전 계산된 면접 시간이 없습니다.');
-          setAvailableSlots([]);
-        } else {
-          // DB 데이터를 TimeSlot 형식으로 변환
-          const formattedSlots: TimeSlot[] = slots.map((slot: AvailableInterviewSlot) => ({
+        // 4. 기예약된 시간을 제외한 최종 슬롯 계산
+        const filteredSlots: TimeSlot[] = availableSlotsFromDB
+          .map((slot: AvailableInterviewSlot) => ({
             start: slot.slot_start,
             end: slot.slot_end,
-            available: slot.is_available
-          }));
+            available: slot.is_available,
+          }))
+          .filter(slot => !bookedStartTimes.has(slot.start)); // 💡 여기서 중복 제거
 
-          setAvailableSlots(formattedSlots);
-          console.log(`✅ 사전 계산된 면접 시간 ${formattedSlots.length}개 조회 완료`);
-        }
+        setAvailableSlots(filteredSlots);
+        console.log(`[UI] ✅ 최종적으로 선택 가능한 시간 ${filteredSlots.length}개 표시`);
 
       } catch (error) {
         console.error('면접 일정 데이터 조회 실패:', error);
@@ -124,6 +132,40 @@ const InterviewScheduling = () => {
 
     fetchSchedulingData();
   }, [applicationId, token]);
+  
+  // ✨ [실시간] 다른 사람이 예약하면 내 화면에서도 해당 슬롯 제거
+  useEffect(() => {
+    if (!applicant?.department) return;
+
+    const channel = supabase.channel(`booked-slots-${applicant.department}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'booked_interview_times',
+          filter: `department=eq.${applicant.department}` 
+        },
+        (payload) => {
+          const newBookedSlot = payload.new as { start_time: string };
+          console.log('[REALTIME] ⚡️ 실시간 예약 발생! 내 화면에서 해당 슬롯 제거:', newBookedSlot.start_time);
+          setAvailableSlots(prevSlots =>
+            prevSlots.filter(slot => slot.start !== newBookedSlot.start_time)
+          );
+          // 내가 선택한 슬롯이 방금 예약되었다면, 내 선택도 취소
+          if (selectedSlot?.start === newBookedSlot.start_time) {
+            setSelectedSlot(null);
+            alert('죄송합니다. 방금 다른 지원자가 해당 시간을 선택했습니다. 다른 시간을 골라주세요.');
+          }
+        }
+      )
+      .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+  }, [applicant?.department, selectedSlot]);
+
 
   // 📅 시간 슬롯 선택
   const handleSlotSelect = (slot: TimeSlot) => {
@@ -137,19 +179,30 @@ const InterviewScheduling = () => {
       return;
     }
 
+    // ✨ [수정] 백엔드 함수 명세에 맞게 데이터 전달
     try {
       setIsSubmitting(true);
       console.log('📝 면접 시간 확정 시작:', selectedSlot);
 
-      // 🚀 Edge Function 호출 (applicationId와 selectedSlot만 전달)
       const { data, error } = await supabase.functions.invoke('confirm-interview-schedule', {
         body: {
           applicationId: applicant.id,
-          selectedSlot: selectedSlot,
+          jobId: applicant.job_id,
+          department: applicant.department,
+          startTime: selectedSlot.start,
+          endTime: selectedSlot.end,
         }
       });
 
       if (error) {
+        // 409 Conflict 에러는 이미 예약되었다는 의미
+        if ((error as any).context?.status === 409) {
+          const responseBody = await (error as any).context.json();
+          // 실시간으로 슬롯이 제거되기 전에 클릭한 경우이므로, UI를 한번 더 업데이트
+          setAvailableSlots(prev => prev.filter(s => s.start !== selectedSlot.start));
+          setSelectedSlot(null);
+          throw new Error(responseBody.message || '이미 예약된 시간입니다.');
+        }
         throw error;
       }
       
@@ -257,10 +310,11 @@ const InterviewScheduling = () => {
                         <button
                           key={slot.start}
                           onClick={() => handleSlotSelect(slot)}
+                          disabled={!slot.available} // 💡 이 부분은 DB에서 is_available=false인 경우를 위해 남겨둡니다.
                           className={`p-2 rounded-md text-center transition-all duration-200 ${
                             selectedSlot?.start === slot.start
                               ? 'bg-black text-white shadow-lg scale-105'
-                              : 'bg-gray-100 hover:bg-gray-200'
+                              : 'bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed'
                           }`}
                         >
                           {format(new Date(slot.start), 'HH:mm')} - {format(new Date(slot.end), 'HH:mm')}
