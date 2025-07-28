@@ -115,9 +115,14 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
 
     // 4. Filter by statuses
     if (selectedStatuses.length > 0) {
-      filtered = filtered.filter(app => 
-        selectedStatuses.includes(app.status) || selectedStatuses.includes(app.final_status)
-      );
+      filtered = filtered.filter(app => {
+        // final_status가 결정된 경우, final_status를 기준으로 필터링
+        if (app.final_status !== 'pending') {
+          return selectedStatuses.includes(app.final_status);
+        }
+        // 그렇지 않으면, 기존 status를 기준으로 필터링
+        return selectedStatuses.includes(app.status);
+      });
     }
 
     // 5. Sort

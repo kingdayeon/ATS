@@ -121,154 +121,68 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
 
   // 🔄 지원서 상태 변경
-  updateApplicationStatus: async (applicationId: number, newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => {
+  updateApplicationStatus: async (applicationId, newStatus, interviewSettings) => {
+    // 로딩 상태 시작 (즉시 UI 반영)
+    const originalApplications = get().applications;
+    set(state => ({
+      isLoading: true,
+      applications: state.applications.map(app =>
+        app.id === applicationId
+          ? { ...app, status: newStatus, final_status: newStatus === 'rejected' ? 'rejected' : app.final_status }
+          : app
+      ),
+    }));
+
     try {
-      console.log(`🚀 지원자 ${applicationId}의 상태를 변경 시작: ${newStatus}`, interviewSettings ? `(면접 설정 포함)` : '')
-      
-      // 로딩 상태 시작
-      set((state) => ({
-        isLoading: true,
-        applications: state.applications.map(app =>
-          app.id === applicationId
-            ? { ...app, status: newStatus }
-            : app
-        )
-      }))
+      let updatePayload: Partial<Application> = { status: newStatus };
 
-      console.log('📝 로딩 상태 업데이트 완료')
+      if (newStatus === 'rejected') {
+        updatePayload = { final_status: 'rejected', status: 'rejected' }; // status도 함께 업데이트하여 일관성 유지
+      }
 
-      // 1. DB 상태 업데이트
-      const { error: updateError } = await supabase
+      const { data: updatedApplication, error: updateError } = await supabase
         .from('applications')
-        .update({ status: newStatus })
+        .update(updatePayload)
         .eq('id', applicationId)
-
-      if (updateError) {
-        console.error('❌ DB 상태 업데이트 실패:', updateError)
-        throw updateError
-      }
-
-      console.log('✅ DB 상태 업데이트 완료')
-
-      // 2. 지원자 정보 조회 (이메일 발송용)
-      console.log('👤 지원자 정보 조회 중...')
-      const { data: application, error: fetchError } = await supabase
-        .from('applications')
-        .select(`
-          id, name, email,
-          jobs:job_id (
-            title,
-            department
-          )
-        `)
-        .eq('id', applicationId)
-        .single()
-
-      if (fetchError || !application) {
-        console.error('❌ 지원자 정보 조회 실패:', fetchError)
-        throw new Error('지원자 정보를 조회할 수 없습니다.')
-      }
-
-      console.log('✅ 지원자 정보 조회 완료:', application)
-
-      // 👤 현재 사용자 세션에서 provider_token 및 이메일 가져오기
-      const session = useAuthStore.getState().session;
-      const user = useAuthStore.getState().user;
-      // 💣 더 이상 사용되지 않음
-      // const providerToken = session?.provider_token; 
-      const userEmail = user?.email;
-
-      if (newStatus === 'interview' && !userEmail) { // 🔑 토큰 대신 이메일 존재 여부만 체크
-        throw new Error('Google 계정 인증 정보(이메일)를 찾을 수 없습니다. 다시 로그인해주세요.');
-      }
+        .select()
+        .single();
       
-      // 3. 상태 변경 이메일 발송 (Edge Function 호출)
-      console.log('📧 상태 변경 이메일 발송 시작...')
+      if (updateError) throw updateError;
       
-      // ✨ [변경] 백엔드 함수 시그니처에 맞춰 interviewDetails로 이름 변경
-      const bodyPayload = {
-        applicantName: application.name,
-        applicantEmail: application.email,
-        jobTitle: (application.jobs as any)?.title || '',
-        company: '무신사',
-        newStatus,
-        applicationId,
-        interviewDetails: interviewSettings, // ✨ 이름 변경 및 전달
-      };
+      // DB의 최종 결과로 상태를 다시 한번 업데이트하여 정합성 보장
+      set(state => ({
+        applications: state.applications.map(app => 
+          app.id === updatedApplication.id ? updatedApplication : app
+        ),
+      }));
 
-      console.log('📤 Edge Function 호출 데이터:', bodyPayload)
+      // 'rejected'가 아닌 경우에만 이메일 발송
+      if (newStatus !== 'rejected') {
+        const { data: application, error: fetchError } = await supabase
+          .from('applications')
+          .select('id, name, email, jobs:job_id(title, department)')
+          .eq('id', applicationId)
+          .single();
+        if (fetchError || !application) throw new Error('지원자 정보 조회 실패');
 
-      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-status-change-email', {
-        body: bodyPayload
-      })
-
-      console.log('📨 Edge Function 응답 원본:', { data: emailResult, error: emailError })
-
-      if (emailError) {
-        console.error('❌ Edge Function 호출 실패:', emailError)
-        console.error('❌ 오류 상세:', JSON.stringify(emailError, null, 2))
-        throw new Error(`이메일 발송 실패: ${emailError.message || JSON.stringify(emailError)}`)
+        await supabase.functions.invoke('send-status-change-email', {
+          body: {
+            applicantName: application.name,
+            applicantEmail: application.email,
+            jobTitle: (application.jobs as any)?.title || '',
+            company: '무신사',
+            newStatus,
+            applicationId,
+            interviewDetails: interviewSettings,
+          },
+        });
       }
-
-      if (!emailResult?.success) {
-        console.error('❌ Edge Function 실행 실패:', emailResult)
-        console.error('❌ 오류 메시지:', emailResult?.error)
-        
-                 // 🔍 Edge Function 로그 출력 (실패 시)
-         if (emailResult?.logs && Array.isArray(emailResult.logs)) {
-           console.log('📋 === Edge Function 상세 로그 (실패) ===')
-           emailResult.logs.forEach((log: any, index: number) => {
-             console.log(`${index + 1}. ${log}`)
-           })
-         }
-        
-        throw new Error(emailResult?.error || '이메일 발송에 실패했습니다.')
-      }
-
-      console.log('✅ Edge Function 실행 성공!')
-      console.log('📊 응답 상세 (펼치지 않으셔도 됩니다):', emailResult)
-      
-      // 🔍 Edge Function 로그 데이터 검증
-      console.log('🕵️‍♂️ === 로그 데이터 검증 시작 ===');
-      console.log('  - `logs` 필드 존재 여부:', emailResult && emailResult.hasOwnProperty('logs'));
-      console.log('  - `logs` 필드가 배열인가?:', Array.isArray(emailResult?.logs));
-      console.log('  - `logs` 배열 길이:', emailResult?.logs?.length ?? 'N/A');
-      console.log('🕵️‍♂️ === 로그 데이터 검증 종료 ===');
-      
-             // 🔍 Edge Function 로그 출력 (성공 시)
-       if (emailResult?.logs && Array.isArray(emailResult.logs)) {
-         console.log('📋 === Edge Function 상세 로그 (성공) ===')
-         emailResult.logs.forEach((log: any, index: number) => {
-           console.log(`${index + 1}. ${log}`)
-         })
-       }
-      
-      if (emailResult.details) {
-        console.log('📋 처리 결과:')
-        console.log(`  - 이메일 발송: ${emailResult.details.emailSent ? '✅' : '❌'}`)
-        console.log(`  - Slack 발송: ${emailResult.details.slackSent ? '✅' : '❌'}`)
-        console.log(`  - 면접 시간 생성: ${emailResult.details.interviewSlotsGenerated ? '✅' : '❌'}`)
-      }
-
-      if (emailResult.schedulingUrl) {
-        console.log('🔗 면접 일정 링크:', emailResult.schedulingUrl)
-      }
-
-      console.log('🎉 상태 변경 프로세스 완료!')
-
     } catch (error) {
-      console.error('❌ 상태 변경 실패:', error)
-      
-             // 에러 발생 시 상태 롤백
-       const { selectedJobId } = get()
-       if (selectedJobId) {
-         await get().fetchApplications(selectedJobId)
-       }
-      
-      throw error
+      console.error('상태 변경 실패, 원래 상태로 롤백:', error);
+      set({ applications: originalApplications }); // 에러 발생 시 원래 상태로 롤백
+      throw error;
     } finally {
-      // 로딩 상태 종료
-      set({ isLoading: false })
+      set({ isLoading: false }); // 성공/실패 여부와 관계없이 로딩 상태 종료
     }
   },
 

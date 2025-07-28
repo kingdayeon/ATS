@@ -111,6 +111,7 @@ const StatusColumn = ({
               key={application.id}
               application={application}
               selectedJob={selectedJob}
+              statusKey={statusKey as any} // statusKey 전달
               onMenuClick={onApplicationMenuClick}
               onStatusChange={onStatusChange}
             />

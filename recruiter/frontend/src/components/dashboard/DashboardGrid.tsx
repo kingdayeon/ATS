@@ -54,7 +54,7 @@ const DashboardGrid = ({
         items={sortApplications([
           ...getApplicationsByFinalStatus('hired'),
           ...getApplicationsByFinalStatus('offer_declined'),
-          ...getApplicationsByFinalStatus('rejected'),
+          // 'rejected' 상태는 여기서 더 이상 보여주지 않음
         ])}
         emptyText="최종 결정된 지원자가 없습니다"
         selectedJob={selectedJob || undefined}

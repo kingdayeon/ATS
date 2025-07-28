@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useApplicantStore } from '../../store/applicantStore';
-import FinalStatusBadge from '../ui/FinalStatusBadge';
-import { STATUS_MAP } from '../../../../../shared/constants'; // 상수 import
+import StatusBadge from '../ui/StatusBadge'; // 통합 뱃지 import
 
 const ApplicantsTable = () => {
   const navigate = useNavigate();
@@ -26,14 +25,7 @@ const ApplicantsTable = () => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.email}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.jobs?.title || getJobTitleById(app.job_id)}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {app.final_status !== 'pending'
-                  ? <FinalStatusBadge status={app.final_status} />
-                  : (
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${STATUS_MAP[app.status]?.className || ''}`}>
-                      {STATUS_MAP[app.status]?.text || app.status}
-                    </span>
-                  )
-                }
+                <StatusBadge status={app.final_status !== 'pending' ? app.final_status : app.status} />
               </td>
             </tr>
           ))}

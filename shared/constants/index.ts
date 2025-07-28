@@ -84,12 +84,12 @@ export const STATUS_DISPLAY_NAMES: Record<string, string> = {
   'rejected': '불합격'
 }; 
 
-export const STATUS_MAP: Record<ApplicationStatus | FinalStatus, { text: string; className: string }> = {
-  submitted: { text: '지원 접수', className: 'bg-gray-100 text-gray-800' },
-  interview: { text: '면접 진행', className: 'bg-yellow-100 text-yellow-800' },
-  accepted: { text: '입사 제안', className: 'bg-purple-100 text-purple-800' },
-  rejected: { text: '불합격', className: 'bg-red-100 text-red-800' },
-  hired: { text: '입사 결정', className: 'bg-green-100 text-green-800' },
-  offer_declined: { text: '입사 취소', className: 'bg-yellow-100 text-yellow-800' },
-  pending: { text: '진행중', className: 'hidden' }, // pending은 보통 표시되지 않음
+export const STATUS_MAP: Record<string, { text: string; className: string }> = {
+  submitted: { text: '지원 접수', className: 'bg-gray-100 text-gray-800 border border-gray-300' },
+  interview: { text: '면접 진행', className: 'bg-yellow-100 text-yellow-800 border border-yellow-300' },
+  accepted: { text: '입사 제안', className: 'bg-purple-100 text-purple-800 border border-purple-300' },
+  rejected: { text: '불합격', className: 'bg-red-100 text-red-800 border border-red-300' },
+  hired: { text: '입사 결정', className: 'bg-green-100 text-green-800 border border-green-300' },
+  offer_declined: { text: '입사 취소', className: 'bg-yellow-100 text-yellow-800 border border-yellow-300' },
+  pending: { text: '진행중', className: 'hidden' },
 }; 

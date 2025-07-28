@@ -41,12 +41,13 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // DB 업데이트: final_status와 status를 함께 변경
+    // DB 업데이트: final_status만 변경
     const { error } = await supabase
       .from("applications")
       .update({ 
         final_status: finalStatus,
-        status: finalStatus === 'hired' ? 'accepted' : 'rejected' // 'accepted'는 채용, 'rejected'는 포기/불합격
+        // 💣 [제거] status 컬럼은 더 이상 여기서 변경하지 않습니다.
+        // status: finalStatus === 'hired' ? 'accepted' : 'rejected'
       })
       .eq("id", applicationId);
 

@@ -1,18 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import type { Application, Job } from '../../../../../shared/types';
+import type { Application, Job, ApplicationStatus } from '../../../../../shared/types';
 import { getDepartmentColor } from '../../../../../shared/utils';
 import { useAuthStore } from '../../store/authStore';
-import FinalStatusBadge from './FinalStatusBadge'; // 뱃지 컴포넌트 import
+import StatusBadge from './StatusBadge'; // 통합 뱃지 import
 
 interface ApplicationCardProps {
   application: Application;
   selectedJob?: Job;
+  statusKey: ApplicationStatus | 'final'; // 컬럼 식별을 위한 statusKey 추가
   onMenuClick?: (application: Application) => void;
   onStatusChange?: (applicationId: number, newStatus: string) => void;
 }
 
-const ApplicationCard = ({ application, selectedJob, onMenuClick, onStatusChange }: ApplicationCardProps) => {
+const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onStatusChange }: ApplicationCardProps) => {
   const navigate = useNavigate();
   const { canChangeApplicationStatus } = useAuthStore();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -54,25 +55,22 @@ const ApplicationCard = ({ application, selectedJob, onMenuClick, onStatusChange
       className={`group relative bg-white rounded-lg border p-4 hover:shadow-md transition-all duration-200 cursor-pointer border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 ${canChangeStatus ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
     >
       <div className="flex items-start justify-between mb-3">
-        {/* ... (이름 정보) ... */}
         <div className="flex items-center flex-1">
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 text-sm truncate">{application.name}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold text-gray-900 text-sm truncate">{application.name}</h4>
+              {/* '최종 결과' 컬럼일 때만 이름 오른쪽에 뱃지 표시 */}
+              {statusKey === 'final' && (
+                <StatusBadge status={application.final_status} />
+              )}
+            </div>
             <p className="text-xs text-gray-500 truncate">{application.english_name}</p>
           </div>
         </div>
-        {/* ... (드롭다운 메뉴) ... */}
+        {/* ... (드롭다운 메뉴) */}
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        {selectedJob && (
-          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getDepartmentColor(selectedJob.department)}`}>
-            {selectedJob.department}
-          </span>
-        )}
-        <FinalStatusBadge status={application.final_status} />
-      </div>
-
+      {/* 연락처 정보 */}
       <div className="space-y-1 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>

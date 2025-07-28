@@ -1,18 +1,12 @@
 import type { Application, Job } from '../../../../../shared/types';
-import { getDepartmentColor } from '../../../../../shared/utils';
-import FinalStatusBadge from '../ui/FinalStatusBadge'; // FinalStatusBadge import
+import StatusBadge from '../ui/StatusBadge'; // 통합 뱃지 import
 
 interface ApplicationInfoProps {
   application: Application;
   job: Job;
-  getStatusText: (status: any) => string;
-  getStatusColor: (status: any) => string;
 }
 
-const ApplicationInfo = ({ application, job, getStatusText, getStatusColor }: ApplicationInfoProps) => {
-  const statusText = getStatusText(application.status);
-  const statusColor = getStatusColor(application.status);
-
+const ApplicationInfo = ({ application, job }: ApplicationInfoProps) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {/* 프로필 헤더 */}
@@ -20,13 +14,7 @@ const ApplicationInfo = ({ application, job, getStatusText, getStatusColor }: Ap
         <h2 className="text-2xl font-bold text-gray-900">{application.name}</h2>
         <p className="text-sm text-gray-500 mt-1">{application.english_name}</p>
         <div className="mt-4">
-          {application.final_status !== 'pending' ? (
-            <FinalStatusBadge status={application.final_status} />
-          ) : (
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}>
-              {statusText}
-            </span>
-          )}
+          <StatusBadge status={application.final_status !== 'pending' ? application.final_status : application.status} />
         </div>
       </div>
 
@@ -57,7 +45,7 @@ const ApplicationInfo = ({ application, job, getStatusText, getStatusColor }: Ap
             </p>
             <p className="text-gray-600">
               <span className="inline-block w-16">부서</span>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getDepartmentColor(job.department)}`}>
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border">
                 {job.department}
               </span>
             </p>
