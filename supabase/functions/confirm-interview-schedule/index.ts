@@ -81,7 +81,7 @@ const getGoogleAccessToken = async (supabase: any) => {
 
 
 // ✨ [추가] Slack 알림 발송 헬퍼 함수
-const sendSlackNotification = async (jobTitle: string, applicantName: string, startTime: string, applicationId: number) => {
+const sendSlackNotification = async (jobTitle: string, applicantName: string, startTime: string, endTime: string, applicationId: number) => {
   // @ts-ignore
   const jobDepartmentMap: { [key: string]: string } = {
     // @ts-ignore
@@ -107,7 +107,26 @@ const sendSlackNotification = async (jobTitle: string, applicantName: string, st
     return;
   }
   
-  const formattedTime = new Date(startTime).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'long', timeStyle: 'short' });
+  const startDate = new Date(startTime);
+  const endDate = new Date(endTime);
+
+  const formattedDate = startDate.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    dateStyle: 'long',
+  });
+
+  const formattedStartTime = startDate.toLocaleTimeString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    timeStyle: 'short',
+  });
+
+  const formattedEndTime = endDate.toLocaleTimeString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    timeStyle: 'short',
+  });
+  
+  const formattedTime = `${formattedDate} ${formattedStartTime} ~ ${formattedEndTime}`;
+
   const message = {
     text: `✅ 면접 일정 확정: ${applicantName} - ${jobTitle}`,
     blocks: [
@@ -235,7 +254,7 @@ serve(async (req: Request) => {
     }
 
     // --- 5. Slack 알림 발송 ---
-    await sendSlackNotification((appData.jobs as any).title, appData.name, startTime, applicationId);
+    await sendSlackNotification((appData.jobs as any).title, appData.name, startTime, endTime, applicationId);
 
 
     // --- 6. 지원서 상태 업데이트 ---
