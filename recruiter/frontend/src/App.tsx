@@ -9,6 +9,7 @@ import ApplicationDetail from './pages/ApplicationDetail';
 import FinalizeStatus from './pages/FinalizeStatus'; // 페이지 import
 import InterviewScheduling from './pages/InterviewScheduling';
 import InterviewScheduled from './pages/InterviewScheduled';
+import ApplicantManagement from './pages/ApplicantManagement'; // 페이지 import
 
 function App() {
   const { isLoading, isAuthenticated, setSession, setLoading } = useAuthStore();
@@ -75,6 +76,7 @@ function App() {
         {isAuthenticated ? (
           <>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/applicants" element={<ApplicantManagement />} />
             <Route path="/application/:id" element={<ApplicationDetail />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

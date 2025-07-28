@@ -72,6 +72,7 @@ export interface Application {
   final_status: FinalStatus;
   created_at: string;
   updated_at: string;
+  jobs?: { title: string; department: string; }; // jobs 필드 추가
 }
 
 export interface ApplicationFormData {

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { Job, User } from '../../../../../shared/types';
 
 interface DashboardHeaderProps {
@@ -33,6 +34,13 @@ const DashboardHeader = ({
           </div>
           
           <div className="flex items-center gap-4">
+            <Link
+              to="/applicants"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            >
+              모든 지원자 보기
+            </Link>
+
             <select 
               value={selectedJobId || ''}
               onChange={onJobChange}
