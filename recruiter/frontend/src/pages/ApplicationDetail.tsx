@@ -160,21 +160,23 @@ const ApplicationDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* 헤더 */}
-      <ApplicationHeader applicantName={application.name} />
+      <div className="flex-shrink-0">
+        <ApplicationHeader applicantName={application.name} />
+      </div>
 
-      {/* 메인 컨텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
-        {/* 왼쪽: 지원자 정보 + 상태 관리 */}
-        <div className="md:col-span-1 space-y-6">
+      {/* 메인 컨텐츠 그리드 (flex-grow로 남은 공간 채우기) */}
+      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
+        
+        {/* 왼쪽 컬럼 (독립적인 스크롤) */}
+        <div className="xl:col-span-1 space-y-6 overflow-y-auto">
           <ApplicationInfo
             application={application}
             job={job}
             getStatusText={getStatusText}
             getStatusColor={getStatusColor}
           />
-          {/* ✨ [수정] StatusManagement에 onStatusChange 핸들러를 전달합니다. */}
           <StatusManagement
             currentStatus={application.status}
             onStatusChange={handleStatusChange}
@@ -184,22 +186,12 @@ const ApplicationDetail = () => {
           />
         </div>
 
-        {/* 오른쪽: PDF 뷰어 */}
-        <div className="xl:col-span-2">
+        {/* 오른쪽 컬럼 (독립적인 스크롤) */}
+        <div className="xl:col-span-2 overflow-y-auto rounded-lg">
           <PDFViewer application={application} />
         </div>
-      </div>
-      {/* 💣 [제거] 모달 호출 로직은 StatusManagement 컴포넌트로 이동했습니다. */}
-      {/* {isScheduleModalOpen && (
-        <InterviewScheduleModal 
-          isOpen={isScheduleModalOpen}
-          onClose={() => setScheduleModalOpen(false)}
-          onConfirm={handleScheduleConfirm}
-          applicationId={application.id}
-          applicantName={application.name}
-          department={job.department}
-        />
-      )} */}
+        
+      </main>
     </div>
   );
 };
