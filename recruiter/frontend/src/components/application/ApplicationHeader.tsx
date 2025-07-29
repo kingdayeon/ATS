@@ -23,7 +23,7 @@ const ApplicationHeader = ({ applicantName }: ApplicationHeaderProps) => {
               <span className="text-white font-bold text-lg">M</span>
             </div>
             <h1 className="text-lg font-bold text-gray-800">
-              지원서 상세 - {applicantName}
+              {applicantName}님
             </h1>
           </div>
         </div>
