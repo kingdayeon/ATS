@@ -76,9 +76,26 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         
       if (applicationsError) throw applicationsError;
 
+      // localStorage에서 이전에 선택된 직군 복원
+      const savedJobId = localStorage.getItem('selectedJobId');
+      let initialSelectedJobId = null;
+      
+      if (savedJobId) {
+        const jobId = parseInt(savedJobId);
+        // 저장된 직군이 현재 활성화된 직군 목록에 있는지 확인
+        const jobExists = (jobs || []).some(job => job.id === jobId);
+        if (jobExists) {
+          initialSelectedJobId = jobId;
+        } else {
+          // 존재하지 않는 직군이면 localStorage에서 제거
+          localStorage.removeItem('selectedJobId');
+        }
+      }
+      
       set({ 
         jobs: jobs || [], 
         applications: (applications as Application[]) || [],
+        selectedJobId: initialSelectedJobId,
         isLoading: false,
         sortOption: 'latest'
       });
@@ -91,6 +108,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   // 채용공고 선택
   setSelectedJob: (jobId: number | null) => {
+    // localStorage에 선택된 직군 저장
+    if (jobId) {
+      localStorage.setItem('selectedJobId', jobId.toString());
+    } else {
+      localStorage.removeItem('selectedJobId');
+    }
     set({ selectedJobId: jobId });
   },
 
