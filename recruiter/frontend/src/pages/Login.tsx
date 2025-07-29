@@ -10,7 +10,6 @@ const Login = () => {
   const authorizedEmails = [
     { email: 'recruiter.dayeon@gmail.com', role: '채용담당자', color: 'bg-blue-100 text-blue-800' },
     { email: 'dev.lead.dayeon@gmail.com', role: '개발팀장', color: 'bg-purple-100 text-purple-800' },
-    { email: 'design.lead.dayeon@gmail.com', role: '디자인팀장', color: 'bg-pink-100 text-pink-800' },
     { email: 'dev.member.dayeon@gmail.com', role: '개발팀원', color: 'bg-green-100 text-green-800' },
   ];
 
