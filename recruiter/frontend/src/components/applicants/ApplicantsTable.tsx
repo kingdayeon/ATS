@@ -25,8 +25,29 @@ const ApplicantsTable = () => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {applications.map(app => {
-            const averageScore = app.average_score != null ? Math.round(app.average_score) : null;
-            const hasEvaluated = user ? (app.evaluator_ids || []).includes(user.id) : false;
+            // 현재 상태에 따라 적절한 평가 정보 선택
+            const isDocumentStage = app.status === 'submitted';
+            const isInterviewStage = app.status === 'interview';
+            const isOfferStage = app.status === 'accepted';
+            const isFinalStage = app.final_status === 'hired' || app.final_status === 'offer_declined';
+            
+            const currentAverageScore = isDocumentStage
+              ? app.document_average_score
+              : app.interview_average_score; // 면접 이후 단계는 면접 평가 사용
+              
+            const currentEvaluatorIds = isDocumentStage 
+              ? (app.document_evaluator_ids || [])
+              : (app.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
+            
+            const averageScore = currentAverageScore != null ? Math.round(currentAverageScore) : null;
+            const hasEvaluated = user ? currentEvaluatorIds.includes(user.id) : false;
+            
+            // 총 평균 계산 (면접 단계 이후에만)
+            const documentScore = app.document_average_score != null ? Math.round(app.document_average_score) : null;
+            const interviewScore = app.interview_average_score != null ? Math.round(app.interview_average_score) : null;
+            const totalAverageScore = (documentScore !== null && interviewScore !== null) 
+              ? Math.round((documentScore + interviewScore) / 2) 
+              : null;
 
             return (
               <tr key={app.id} onClick={() => navigate(`/application/${app.id}`)} className="hover:bg-gray-50 cursor-pointer">
@@ -37,7 +58,12 @@ const ApplicantsTable = () => {
                   <StatusBadge status={app.final_status !== 'pending' ? app.final_status : app.status} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800">
-                  {averageScore !== null ? `${averageScore}점` : '-'}
+                  {averageScore !== null ? (
+                    isDocumentStage ? `서류 평균 ${averageScore}점` :
+                    isInterviewStage ? `면접 평균 ${averageScore}점` :
+                    (isOfferStage || isFinalStage) ? `총 평균 ${totalAverageScore}점` :
+                    `면접 평균 ${averageScore}점`
+                  ) : '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <StatusBadge 

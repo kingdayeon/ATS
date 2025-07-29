@@ -75,6 +75,16 @@ export interface Application {
   jobs?: { title: string; department: string; }; // jobs 필드 추가
 
   // DB 함수로부터 추가되는 평가 정보 (선택적)
+  // 서류 평가
+  document_average_score?: number;
+  document_evaluation_count?: number;
+  document_evaluator_ids?: number[];
+  // 면접 평가
+  interview_average_score?: number;
+  interview_evaluation_count?: number;
+  interview_evaluator_ids?: number[];
+  
+  // 하위 호환성을 위한 필드 (기존 코드가 동작하도록)
   average_score?: number;
   evaluation_count?: number;
   evaluator_ids?: number[];
@@ -335,14 +345,19 @@ export interface TimeSlot {
   available: boolean;
 }
 
+export type EvaluationStage = 'document' | 'interview';
+
 export interface Evaluation {
   id: number;
   created_at: string;
-  user_id: number; // string -> number로 수정
+  user_id: number;
   application_id: number;
   score: number;
   comment: string;
-  users: { // JOIN된 사용자 정보
+  evaluation_stage: EvaluationStage; // 새로운 필드 추가
+  user_name?: string; // DB 함수에서 반환되는 필드
+  user_role?: string; // DB 함수에서 반환되는 필드
+  users?: { // 기존 JOIN된 사용자 정보 (하위 호환성)
     name: string;
     email: string;
   };

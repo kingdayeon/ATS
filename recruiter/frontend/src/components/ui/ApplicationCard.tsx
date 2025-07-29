@@ -17,15 +17,30 @@ const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onS
   const navigate = useNavigate();
   const { user, canChangeApplicationStatus } = useAuthStore();
   
-  // --- Start of Bug Fix ---
-  // 1. evaluator_ids가 null일 경우를 대비해 빈 배열로 초기화합니다.
-  const evaluatorIds = application.evaluator_ids || [];
-  // 2. user.id가 존재하는지 확인하고, 타입을 맞춰서 안전하게 비교합니다.
-  const hasEvaluated = user ? evaluatorIds.includes(user.id) : false;
+  // 현재 상태에 따라 적절한 평가 정보 선택
+  const isDocumentStage = application.status === 'submitted';
+  const isInterviewStage = application.status === 'interview';
+  const isOfferStage = application.status === 'accepted';
+  const isFinalStage = statusKey === 'final' || application.final_status === 'hired' || application.final_status === 'offer_declined';
   
-  // 3. average_score가 null이나 undefined가 아닐 때만 점수를 계산합니다.
-  const averageScore = application.average_score != null ? Math.round(application.average_score) : null;
-  // --- End of Bug Fix ---
+  // 서류 단계에서는 서류 평가, 면접 단계 이후에는 면접 평가 사용
+  const currentEvaluatorIds = isDocumentStage 
+    ? (application.document_evaluator_ids || [])
+    : (application.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
+    
+  const currentAverageScore = isDocumentStage
+    ? application.document_average_score
+    : application.interview_average_score; // 면접 이후 단계는 면접 평가 사용
+  
+  const hasEvaluated = user ? currentEvaluatorIds.includes(user.id) : false;
+  const averageScore = currentAverageScore != null ? Math.round(currentAverageScore) : null;
+  
+  // 총 평균 계산 (면접 단계 이후에만)
+  const documentScore = application.document_average_score != null ? Math.round(application.document_average_score) : null;
+  const interviewScore = application.interview_average_score != null ? Math.round(application.interview_average_score) : null;
+  const totalAverageScore = (documentScore !== null && interviewScore !== null) 
+    ? Math.round((documentScore + interviewScore) / 2) 
+    : null;
 
   // ... (기존 드롭다운 및 핸들러 로직은 그대로 유지)
   const [showDropdown, setShowDropdown] = useState(false);
@@ -73,26 +88,27 @@ const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onS
       
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          {/* '입사 제안'과 '최종 결과'가 아닐 때만 평가 뱃지 표시 */}
-          {statusKey !== 'accepted' && statusKey !== 'final' && (
-            <>
-              {averageScore !== null && (
-                <StatusBadge 
-                  status="evaluated"
-                  customText={`평균 ${averageScore}점`}
-                  customClassName="bg-blue-100 text-blue-800 border-blue-200"
-                />
-              )}
-              <StatusBadge 
-                status={hasEvaluated ? 'evaluated' : 'not_evaluated'}
-                customText={hasEvaluated ? '평가 완료' : '미평가'}
-                customClassName={hasEvaluated 
-                  ? 'bg-green-100 text-green-800 border-green-200' 
-                  : 'bg-gray-100 text-gray-700 border-gray-200'
-                }
+          {/* 평가 뱃지 표시 */}
+          <>
+            {/* 입사제안/최종결과 단계에서는 총 평균, 다른 단계에서는 현재 단계 평균 */}
+            {(isOfferStage || isFinalStage) && totalAverageScore ? (
+              <StatusBadge
+                status="evaluated"
+                customText={`총 평균 ${totalAverageScore}점`}
+                customClassName="bg-purple-100 text-purple-800 border-purple-200"
               />
-            </>
-          )}
+            ) : averageScore !== null && (
+              <StatusBadge
+                status="evaluated"
+                customText={
+                  isDocumentStage ? `서류 평균 ${averageScore}점` : `면접 평균 ${averageScore}점`
+                }
+                customClassName="bg-blue-100 text-blue-800 border-blue-200"
+              />
+            )}
+            
+
+          </>
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>

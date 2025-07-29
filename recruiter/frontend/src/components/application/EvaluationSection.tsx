@@ -1,40 +1,55 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
-import type { Evaluation } from '../../../../../shared/types';
+import type { Evaluation, EvaluationStage } from '../../../../../shared/types';
 import { useParams } from 'react-router-dom';
 import { Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useDashboardStore } from '../../store/dashboardStore'; // 대시보드 스토어 import
+import { useDashboardStore } from '../../store/dashboardStore';
 
-const EvaluationSection = () => {
+interface EvaluationSectionProps {
+  applicationStatus: string; // 지원서 상태 전달받기
+}
+
+const EvaluationSection = ({ applicationStatus }: EvaluationSectionProps) => {
   const { id: applicationId } = useParams<{ id: string }>();
-  const { user, canEvaluate } = useAuthStore(); // canChangeApplicationStatus -> canEvaluate
-  const updateApplicationEvaluation = useDashboardStore(state => state.updateApplicationEvaluation); // 스토어 액션 가져오기
+  const { user, canEvaluate } = useAuthStore();
+  const updateApplicationEvaluation = useDashboardStore(state => state.updateApplicationEvaluation);
   
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [score, setScore] = useState(50);
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // 현재 상태에 따라 evaluation_stage 결정
+  const evaluationStage: EvaluationStage = applicationStatus === 'submitted' ? 'document' : 'interview';
+
   // 평가 목록 불러오기
   useEffect(() => {
     const fetchEvaluations = async () => {
       if (!applicationId) return;
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_evaluations_for_application', { p_application_id: parseInt(applicationId) });
+      const { data, error } = await supabase.rpc('get_evaluations_for_application', { 
+        application_id_param: parseInt(applicationId),
+        evaluation_stage_param: evaluationStage
+      });
 
       if (error) {
         console.error('평가 목록 로딩 실패:', error);
       } else {
-        const allEvals: Evaluation[] = data.map((e: any) => ({ ...e, users: { name: e.evaluator_name, email: e.evaluator_email } }));
+        const allEvals: Evaluation[] = data.map((e: any) => ({ 
+          ...e, 
+          users: { name: e.user_name, email: e.user_name }, // user_name 사용
+          user_name: e.user_name,
+          user_role: e.user_role
+        }));
         setEvaluations(allEvals);
       }
       setIsLoading(false);
     };
     fetchEvaluations();
-  }, [applicationId]);
+  }, [applicationId, evaluationStage]);
 
   // '내 평가'와 '다른 팀원 평가'를 하나의 상태에서 파생
   const { myEvaluation, otherEvaluations } = useMemo(() => {
@@ -52,7 +67,8 @@ const EvaluationSection = () => {
       application_id: parseInt(applicationId),
       score,
       comment,
-    }).select('*, users ( name, email )').single(); // user_id를 기반으로 users 테이블 join
+      evaluation_stage: evaluationStage, // 현재 단계 추가
+    }).select('*, users ( name, email )').single();
 
     if (error) {
       alert(`평가 등록 실패: ${error.message}`);
@@ -63,7 +79,7 @@ const EvaluationSection = () => {
       setComment('');
 
       // ✨ 대시보드 스토어에 평가가 등록되었음을 알림
-      updateApplicationEvaluation(parseInt(applicationId), user.id, score);
+      updateApplicationEvaluation(parseInt(applicationId), user.id, score, evaluationStage);
 
       // --- 요청하신 콘솔 로그 ---
       
@@ -84,7 +100,7 @@ const EvaluationSection = () => {
           {myEvaluation ? (
             <div className="p-3 bg-gray-50 rounded-md border">
               <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-semibold">{myEvaluation.users.name}</p>
+                <p className="text-sm font-semibold">{myEvaluation.user_name || myEvaluation.users?.name}</p>
                 <p className="text-sm font-bold text-indigo-600">{myEvaluation.score}점</p>
               </div>
               <p className="text-xs text-gray-500 mb-2">{format(new Date(myEvaluation.created_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}</p>
@@ -121,7 +137,7 @@ const EvaluationSection = () => {
           {isLoading ? <p>로딩 중...</p> : otherEvaluations.map(eva => (
             <div key={eva.id} className="p-3 bg-white rounded-md border">
               <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-semibold">{eva.users.name}</p>
+                <p className="text-sm font-semibold">{eva.user_name || eva.users?.name}</p>
                 <p className="text-sm font-bold text-indigo-600">{eva.score}점</p>
               </div>
               <p className="text-xs text-gray-500 mb-2">{format(new Date(eva.created_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}</p>

@@ -34,7 +34,7 @@ interface DashboardState {
   updateApplicationStatus: (applicationId: number, newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => Promise<void>;
   
   // 유틸리티
-  updateApplicationEvaluation: (applicationId: number, userId: number, newScore: number) => void;
+  updateApplicationEvaluation: (applicationId: number, userId: number, newScore: number, evaluationStage?: string) => void;
   
 
   sortOption: SortOption;
@@ -163,6 +163,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         ),
       }));
 
+      // 상태 변경 후 대시보드 데이터를 다시 불러와서 평가 정보 업데이트
+      const { data: freshData, error: refreshError } = await supabase.rpc('get_applications_for_dashboard');
+      if (!refreshError && freshData) {
+        set(state => ({
+          applications: freshData.map((app: any) => ({
+            ...app,
+            jobs: app.jobs ? (typeof app.jobs === 'string' ? JSON.parse(app.jobs) : app.jobs) : null
+          }))
+        }));
+      }
+
       // 이메일 발송을 백그라운드로 처리 (UI 블로킹 없음)
       if (newStatus !== 'rejected') {
         // 백그라운드에서 이메일 발송
@@ -208,21 +219,45 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
 
   // 평가 등록 시 대시보드 데이터를 실시간으로 업데이트하는 함수
-  updateApplicationEvaluation: (applicationId, userId, newScore) => {
+  updateApplicationEvaluation: (applicationId, userId, newScore, evaluationStage = 'document') => {
     set(state => ({
       applications: state.applications.map(app => {
         if (app.id === applicationId) {
-          const newEvaluatorIds = [...(app.evaluator_ids || []), userId];
-          const currentTotalScore = (app.average_score || 0) * (app.evaluation_count || 0);
-          const newEvaluationCount = (app.evaluation_count || 0) + 1;
-          const newAverageScore = (currentTotalScore + newScore) / newEvaluationCount;
+          if (evaluationStage === 'document') {
+            // 서류 평가 업데이트
+            const newDocumentEvaluatorIds = [...(app.document_evaluator_ids || []), userId];
+            const currentDocumentTotalScore = (app.document_average_score || 0) * (app.document_evaluation_count || 0);
+            const newDocumentEvaluationCount = (app.document_evaluation_count || 0) + 1;
+            const newDocumentAverageScore = (currentDocumentTotalScore + newScore) / newDocumentEvaluationCount;
 
-          return {
-            ...app,
-            evaluator_ids: newEvaluatorIds,
-            average_score: newAverageScore,
-            evaluation_count: newEvaluationCount,
-          };
+            return {
+              ...app,
+              document_evaluator_ids: newDocumentEvaluatorIds,
+              document_average_score: newDocumentAverageScore,
+              document_evaluation_count: newDocumentEvaluationCount,
+              // 하위 호환성을 위해 기존 필드도 업데이트
+              evaluator_ids: newDocumentEvaluatorIds,
+              average_score: newDocumentAverageScore,
+              evaluation_count: newDocumentEvaluationCount,
+            };
+          } else {
+            // 면접 평가 업데이트
+            const newInterviewEvaluatorIds = [...(app.interview_evaluator_ids || []), userId];
+            const currentInterviewTotalScore = (app.interview_average_score || 0) * (app.interview_evaluation_count || 0);
+            const newInterviewEvaluationCount = (app.interview_evaluation_count || 0) + 1;
+            const newInterviewAverageScore = (currentInterviewTotalScore + newScore) / newInterviewEvaluationCount;
+
+            return {
+              ...app,
+              interview_evaluator_ids: newInterviewEvaluatorIds,
+              interview_average_score: newInterviewAverageScore,
+              interview_evaluation_count: newInterviewEvaluationCount,
+              // 하위 호환성을 위해 기존 필드도 업데이트
+              evaluator_ids: newInterviewEvaluatorIds,
+              average_score: newInterviewAverageScore,
+              evaluation_count: newInterviewEvaluationCount,
+            };
+          }
         }
         return app;
       }),

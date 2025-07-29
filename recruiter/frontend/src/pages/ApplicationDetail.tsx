@@ -46,16 +46,27 @@ const ApplicationDetail = () => {
     try {
       setIsLoading(true);
       
+      // get_applications_for_dashboard 함수를 사용하여 평가 정보 포함
       const { data, error } = await supabase
-        .rpc('get_application_details', { p_application_id: applicationId });
+        .rpc('get_applications_for_dashboard');
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // jobs 객체를 최상위 레벨로 올겨주어 기존 코드와 호환성 유지
-        const applicationData = { ...data[0], jobs: data[0].jobs }; 
-        setLocalApplication(applicationData);
-        setLocalJob(applicationData.jobs);
+        // 특정 지원자 찾기
+        const applicationData = data.find((app: any) => app.id === applicationId);
+        
+        if (applicationData) {
+          // jobs 객체를 최상위 레벨로 올겨주어 기존 코드와 호환성 유지
+          const processedData = { 
+            ...applicationData, 
+            jobs: applicationData.jobs 
+          }; 
+          setLocalApplication(processedData);
+          setLocalJob(processedData.jobs);
+        } else {
+          throw new Error('지원자 정보를 찾을 수 없습니다.');
+        }
       } else {
         throw new Error('지원자 정보를 찾을 수 없습니다.');
       }
@@ -91,6 +102,10 @@ const ApplicationDetail = () => {
     if (!application) return;
     try {
       await updateApplicationStatus(application.id, newStatus, interviewSettings);
+      
+      // 상태 변경 후 데이터를 다시 불러와서 평가 정보 업데이트
+      const applicationId = parseInt(id!);
+      await fetchDirectFromDB(applicationId);
     } catch (error) {
       console.error('상태 변경 실패:', error);
       alert('상태 변경에 실패했습니다.');
@@ -162,7 +177,7 @@ const ApplicationDetail = () => {
           {/* 오른쪽 컬럼 (평가하기) - 조건부 렌더링 및 너비 고정 */}
           {showEvaluation && (
             <div className="w-full max-w-sm flex-shrink-0 space-y-6 overflow-y-auto">
-              <EvaluationSection />
+              <EvaluationSection applicationStatus={application.status} />
             </div>
           )}
           
