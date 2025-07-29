@@ -11,6 +11,7 @@ const ApplicantFilters = () => {
     selectedJobId, setSelectedJobId, getAvailableJobs,
     selectedStatuses, toggleStatusFilter,
     sortOption, setSortOption,
+    filterMyUnevaluated, toggleMyUnevaluatedFilter,
   } = useApplicantStore();
 
   const availableJobs = getAvailableJobs();
@@ -19,6 +20,8 @@ const ApplicantFilters = () => {
     { value: 'latest', label: '최신순' },
     { value: 'name_asc', label: '이름순' },
     { value: 'status_asc', label: '상태순' },
+    { value: 'score_desc', label: '평균 높은 순' },
+    { value: 'score_asc', label: '평균 낮은 순' },
   ];
   const allStatuses = Object.keys(STATUS_MAP).filter(s => s !== 'pending') as (ApplicationStatus | FinalStatus)[];
 
@@ -46,7 +49,7 @@ const ApplicantFilters = () => {
           onChange={(val) => setSortOption(val as SortOption)}
         />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {allStatuses.map(status => (
           <button
             key={status}
@@ -60,6 +63,18 @@ const ApplicantFilters = () => {
             {STATUS_MAP[status]?.text || status}
           </button>
         ))}
+        
+        {/* '미평가' 버튼 추가 */}
+        <button
+          onClick={toggleMyUnevaluatedFilter}
+          className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+            filterMyUnevaluated
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          미평가
+        </button>
       </div>
     </div>
   );

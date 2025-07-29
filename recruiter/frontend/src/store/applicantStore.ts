@@ -4,7 +4,7 @@ import type { Application, Job, ApplicationStatus, FinalStatus } from '../../../
 import { useAuthStore } from './authStore';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
-export type SortOption = 'latest' | 'name_asc' | 'status_asc';
+export type SortOption = 'latest' | 'name_asc' | 'status_asc' | 'score_desc' | 'score_asc';
 
 interface ApplicantState {
   allApplications: Application[];
@@ -16,6 +16,7 @@ interface ApplicantState {
   searchTerm: string;
   selectedJobId: 'all' | number;
   selectedStatuses: (ApplicationStatus | FinalStatus)[];
+  filterMyUnevaluated: boolean;
 
   // Sorting
   sortOption: SortOption;
@@ -26,6 +27,7 @@ interface ApplicantState {
   setSelectedJobId: (jobId: 'all' | number) => void;
   toggleStatusFilter: (status: ApplicationStatus | FinalStatus) => void;
   setSortOption: (option: SortOption) => void;
+  toggleMyUnevaluatedFilter: () => void;
 
   // Getters (Selectors)
   filteredApplications: () => Application[];
@@ -42,6 +44,7 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
   searchTerm: '',
   selectedJobId: 'all',
   selectedStatuses: [],
+  filterMyUnevaluated: false,
   sortOption: 'latest',
 
   // Actions
@@ -51,12 +54,13 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
       const { data: jobs, error: jobsError } = await supabase.from('jobs').select('*');
       if (jobsError) throw jobsError;
 
-      const { data: applications, error: appsError } = await supabase.from('applications').select('*, jobs(title, department)'); // department 추가
+      // 💣 [버그 수정] 기본 테이블 대신, 평가 정보가 포함된 DB 함수를 호출하도록 수정
+      const { data: applications, error: appsError } = await supabase.rpc('get_applications_for_dashboard');
       if (appsError) throw appsError;
 
       set({ 
         jobs: jobs || [], 
-        allApplications: (applications as Application[]) || [], // 원래대로 Application[] 타입 단언
+        allApplications: (applications as Application[]) || [], 
         isLoading: false 
       });
     } catch (error: any) {
@@ -76,6 +80,7 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
     });
   },
   setSortOption: (option) => set({ sortOption: option }),
+  toggleMyUnevaluatedFilter: () => set(state => ({ filterMyUnevaluated: !state.filterMyUnevaluated })),
 
   // Getters
   getJobTitleById: (jobId) => {
@@ -93,14 +98,14 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
   },
 
   filteredApplications: () => {
-    const { allApplications, searchTerm, selectedJobId, selectedStatuses, sortOption } = get();
-    const { canAccessJob, user } = useAuthStore.getState();
+    const { allApplications, searchTerm, selectedJobId, selectedStatuses, sortOption, filterMyUnevaluated } = get();
+    const { canAccessJob, user } = useAuthStore.getState(); // canAccessJob 다시 추가
 
     let filtered = allApplications;
 
     // 1. Filter by user permission
     if (user?.role !== 'admin') {
-      filtered = filtered.filter(app => app.jobs && canAccessJob(app.jobs.department)); // jobs 존재 여부 확인
+      filtered = filtered.filter(app => app.jobs && canAccessJob(app.jobs.department));
     }
 
     // 2. Filter by selected job
@@ -125,6 +130,11 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
       });
     }
 
+    // '내가 미평가' 필터링
+    if (filterMyUnevaluated && user) {
+      filtered = filtered.filter(app => !app.evaluator_ids || !app.evaluator_ids.includes(user.id));
+    }
+    
     // 5. Sort
     switch (sortOption) {
       case 'name_asc':
@@ -132,6 +142,12 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
         break;
       case 'status_asc':
         filtered.sort((a, b) => (a.status + a.final_status).localeCompare(b.status + b.final_status));
+        break;
+      case 'score_desc':
+        filtered.sort((a, b) => (b.average_score || 0) - (a.average_score || 0));
+        break;
+      case 'score_asc':
+        filtered.sort((a, b) => (a.average_score || 0) - (b.average_score || 0));
         break;
       case 'latest':
       default:
