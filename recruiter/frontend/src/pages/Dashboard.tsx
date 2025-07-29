@@ -18,10 +18,73 @@ const sortApplications = (apps: Application[], option: SortOption): Application[
   switch (option) {
     case 'oldest':
       return [...apps].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    case 'score_desc':
-      return [...apps].sort((a, b) => (b.average_score || 0) - (a.average_score || 0));
-    case 'score_asc':
-      return [...apps].sort((a, b) => (a.average_score || 0) - (b.average_score || 0));
+    
+    // 서류 평균 정렬 (점수가 없는 경우 뒤로)
+    case 'document_score_desc':
+      return [...apps].sort((a, b) => {
+        const aScore = a.document_average_score;
+        const bScore = b.document_average_score;
+        if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (aScore == null) return 1;
+        if (bScore == null) return -1;
+        return bScore - aScore;
+      });
+    case 'document_score_asc':
+      return [...apps].sort((a, b) => {
+        const aScore = a.document_average_score;
+        const bScore = b.document_average_score;
+        if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (aScore == null) return 1;
+        if (bScore == null) return -1;
+        return aScore - bScore;
+      });
+    
+    // 면접 평균 정렬 (면접 점수가 없는 경우 뒤로)
+    case 'interview_score_desc':
+      return [...apps].sort((a, b) => {
+        const aScore = a.interview_average_score;
+        const bScore = b.interview_average_score;
+        // 둘 다 없으면 created_at으로 정렬
+        if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        // 하나만 없으면 없는 것을 뒤로
+        if (aScore == null) return 1;
+        if (bScore == null) return -1;
+        return bScore - aScore;
+      });
+    case 'interview_score_asc':
+      return [...apps].sort((a, b) => {
+        const aScore = a.interview_average_score;
+        const bScore = b.interview_average_score;
+        if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (aScore == null) return 1;
+        if (bScore == null) return -1;
+        return aScore - bScore;
+      });
+    
+    // 총 평균 정렬 (총 평균이 없는 경우 뒤로)
+    case 'total_score_desc':
+      return [...apps].sort((a, b) => {
+        const aTotalScore = (a.document_average_score != null && a.interview_average_score != null) 
+          ? (a.document_average_score + a.interview_average_score) / 2 : null;
+        const bTotalScore = (b.document_average_score != null && b.interview_average_score != null) 
+          ? (b.document_average_score + b.interview_average_score) / 2 : null;
+        if (aTotalScore == null && bTotalScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (aTotalScore == null) return 1;
+        if (bTotalScore == null) return -1;
+        return bTotalScore - aTotalScore;
+      });
+    case 'total_score_asc':
+      return [...apps].sort((a, b) => {
+        const aTotalScore = (a.document_average_score != null && a.interview_average_score != null) 
+          ? (a.document_average_score + a.interview_average_score) / 2 : null;
+        const bTotalScore = (b.document_average_score != null && b.interview_average_score != null) 
+          ? (b.document_average_score + b.interview_average_score) / 2 : null;
+        if (aTotalScore == null && bTotalScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (aTotalScore == null) return 1;
+        if (bTotalScore == null) return -1;
+        return aTotalScore - bTotalScore;
+      });
+    
     case 'latest':
     default:
       return [...apps].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -132,8 +195,12 @@ const Dashboard = () => {
   const sortOptions = [
     { value: 'latest', label: '최신 순' },
     { value: 'oldest', label: '오래된 순' },
-    { value: 'score_desc', label: '평균 높은 순' },
-    { value: 'score_asc', label: '평균 낮은 순' },
+    { value: 'document_score_desc', label: '서류 평균 높은 순' },
+    { value: 'document_score_asc', label: '서류 평균 낮은 순' },
+    { value: 'interview_score_desc', label: '면접 평균 높은 순' },
+    { value: 'interview_score_asc', label: '면접 평균 낮은 순' },
+    { value: 'total_score_desc', label: '총 평균 높은 순' },
+    { value: 'total_score_asc', label: '총 평균 낮은 순' },
   ];
 
   // 정렬된 컬럼별 데이터 계산

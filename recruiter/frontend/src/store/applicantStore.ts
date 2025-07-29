@@ -4,7 +4,17 @@ import type { Application, Job, ApplicationStatus, FinalStatus } from '../../../
 import { useAuthStore } from './authStore';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
-export type SortOption = 'latest' | 'oldest' | 'name_asc' | 'status_asc' | 'score_desc' | 'score_asc';
+export type SortOption = 
+  | 'latest' 
+  | 'oldest' 
+  | 'name_asc' 
+  | 'status_asc' 
+  | 'document_score_desc' 
+  | 'document_score_asc'
+  | 'interview_score_desc'
+  | 'interview_score_asc'
+  | 'total_score_desc'
+  | 'total_score_asc';
 
 interface ApplicantState {
   allApplications: Application[];
@@ -143,12 +153,77 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
       case 'status_asc':
         filtered.sort((a, b) => (a.status + a.final_status).localeCompare(b.status + b.final_status));
         break;
-      case 'score_desc':
-        filtered.sort((a, b) => (b.average_score || 0) - (a.average_score || 0));
+      
+      // 서류 평균 정렬 (점수가 없는 경우 뒤로)
+      case 'document_score_desc':
+        filtered.sort((a, b) => {
+          const aScore = a.document_average_score;
+          const bScore = b.document_average_score;
+          if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aScore == null) return 1;
+          if (bScore == null) return -1;
+          return bScore - aScore;
+        });
         break;
-      case 'score_asc':
-        filtered.sort((a, b) => (a.average_score || 0) - (b.average_score || 0));
+      case 'document_score_asc':
+        filtered.sort((a, b) => {
+          const aScore = a.document_average_score;
+          const bScore = b.document_average_score;
+          if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aScore == null) return 1;
+          if (bScore == null) return -1;
+          return aScore - bScore;
+        });
         break;
+      
+      // 면접 평균 정렬 (면접 점수가 없는 경우 뒤로)
+      case 'interview_score_desc':
+        filtered.sort((a, b) => {
+          const aScore = a.interview_average_score;
+          const bScore = b.interview_average_score;
+          if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aScore == null) return 1;
+          if (bScore == null) return -1;
+          return bScore - aScore;
+        });
+        break;
+      case 'interview_score_asc':
+        filtered.sort((a, b) => {
+          const aScore = a.interview_average_score;
+          const bScore = b.interview_average_score;
+          if (aScore == null && bScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aScore == null) return 1;
+          if (bScore == null) return -1;
+          return aScore - bScore;
+        });
+        break;
+      
+      // 총 평균 정렬 (총 평균이 없는 경우 뒤로)
+      case 'total_score_desc':
+        filtered.sort((a, b) => {
+          const aTotalScore = (a.document_average_score != null && a.interview_average_score != null) 
+            ? (a.document_average_score + a.interview_average_score) / 2 : null;
+          const bTotalScore = (b.document_average_score != null && b.interview_average_score != null) 
+            ? (b.document_average_score + b.interview_average_score) / 2 : null;
+          if (aTotalScore == null && bTotalScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aTotalScore == null) return 1;
+          if (bTotalScore == null) return -1;
+          return bTotalScore - aTotalScore;
+        });
+        break;
+      case 'total_score_asc':
+        filtered.sort((a, b) => {
+          const aTotalScore = (a.document_average_score != null && a.interview_average_score != null) 
+            ? (a.document_average_score + a.interview_average_score) / 2 : null;
+          const bTotalScore = (b.document_average_score != null && b.interview_average_score != null) 
+            ? (b.document_average_score + b.interview_average_score) / 2 : null;
+          if (aTotalScore == null && bTotalScore == null) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (aTotalScore == null) return 1;
+          if (bTotalScore == null) return -1;
+          return aTotalScore - bTotalScore;
+        });
+        break;
+      
       case 'oldest':
         filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;

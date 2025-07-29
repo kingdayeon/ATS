@@ -21,8 +21,12 @@ const ApplicantFilters = () => {
     { value: 'oldest', label: '오래된 순' },
     { value: 'name_asc', label: '이름순' },
     { value: 'status_asc', label: '상태순' },
-    { value: 'score_desc', label: '평균 높은 순' },
-    { value: 'score_asc', label: '평균 낮은 순' },
+    { value: 'document_score_desc', label: '서류 평균 높은 순' },
+    { value: 'document_score_asc', label: '서류 평균 낮은 순' },
+    { value: 'interview_score_desc', label: '면접 평균 높은 순' },
+    { value: 'interview_score_asc', label: '면접 평균 낮은 순' },
+    { value: 'total_score_desc', label: '총 평균 높은 순' },
+    { value: 'total_score_asc', label: '총 평균 낮은 순' },
   ];
   const allStatuses = Object.keys(STATUS_MAP).filter(s => s !== 'pending') as (ApplicationStatus | FinalStatus)[];
 

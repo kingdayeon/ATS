@@ -10,7 +10,15 @@ import type {
 } from '../../../../shared/types';
 import { useAuthStore } from './authStore';
 
-export type SortOption = 'latest' | 'oldest' | 'score_desc' | 'score_asc';
+export type SortOption = 
+  | 'latest' 
+  | 'oldest' 
+  | 'document_score_desc' 
+  | 'document_score_asc'
+  | 'interview_score_desc'
+  | 'interview_score_asc'
+  | 'total_score_desc'
+  | 'total_score_asc';
 
 interface DashboardState {
   // 데이터

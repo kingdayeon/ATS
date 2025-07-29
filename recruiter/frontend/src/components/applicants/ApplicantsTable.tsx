@@ -19,8 +19,11 @@ const ApplicantsTable = () => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">이메일</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">지원 직책</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">상태</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">평균 점수</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">내 평가</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">서류 평균</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">면접 평균</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">총 평균</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">서류 평가</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">면접 평가</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -39,15 +42,16 @@ const ApplicantsTable = () => {
               ? (app.document_evaluator_ids || [])
               : (app.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
             
-            const averageScore = currentAverageScore != null ? Math.round(currentAverageScore) : null;
-            const hasEvaluated = user ? currentEvaluatorIds.includes(user.id) : false;
-            
-            // 총 평균 계산 (면접 단계 이후에만)
+            // 각 단계별 평가 정보 계산
             const documentScore = app.document_average_score != null ? Math.round(app.document_average_score) : null;
             const interviewScore = app.interview_average_score != null ? Math.round(app.interview_average_score) : null;
             const totalAverageScore = (documentScore !== null && interviewScore !== null) 
               ? Math.round((documentScore + interviewScore) / 2) 
               : null;
+            
+            // 각 단계별 내 평가 여부
+            const hasDocumentEvaluated = user ? (app.document_evaluator_ids || []).includes(user.id) : false;
+            const hasInterviewEvaluated = user ? (app.interview_evaluator_ids || []).includes(user.id) : false;
 
             return (
               <tr key={app.id} onClick={() => navigate(`/application/${app.id}`)} className="hover:bg-gray-50 cursor-pointer">
@@ -57,21 +61,48 @@ const ApplicantsTable = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <StatusBadge status={app.final_status !== 'pending' ? app.final_status : app.status} />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-800">
-                  {averageScore !== null ? (
-                    isDocumentStage ? `서류 평균 ${averageScore}점` :
-                    isInterviewStage ? `면접 평균 ${averageScore}점` :
-                    (isOfferStage || isFinalStage) ? `총 평균 ${totalAverageScore}점` :
-                    `면접 평균 ${averageScore}점`
-                  ) : '-'}
+                
+                {/* 서류 평균 */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
+                  {documentScore !== null ? `${documentScore}점` : '평가 전'}
                 </td>
+                
+                {/* 면접 평균 */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
+                  {interviewScore !== null ? `${interviewScore}점` : 
+                   isDocumentStage ? '면접 진행 전' : '평가 전'}
+                </td>
+                
+                {/* 총 평균 */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-700">
+                  {totalAverageScore !== null ? `${totalAverageScore}점` : '미정'}
+                </td>
+                
+                {/* 서류 평가 */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <StatusBadge 
-                    status={hasEvaluated ? 'evaluated' : 'not_evaluated'} 
-                    customText={hasEvaluated ? '평가 완료' : '미평가'}
-                    customClassName={hasEvaluated 
+                    status={hasDocumentEvaluated ? 'evaluated' : 'not_evaluated'} 
+                    customText={hasDocumentEvaluated ? '평가 완료' : '미평가'}
+                    customClassName={hasDocumentEvaluated 
                       ? 'bg-green-100 text-green-800 border-green-200' 
                       : 'bg-gray-100 text-gray-700 border-gray-200'
+                    }
+                  />
+                </td>
+                
+                {/* 면접 평가 */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <StatusBadge 
+                    status={hasInterviewEvaluated ? 'evaluated' : 'not_evaluated'} 
+                    customText={
+                      isDocumentStage ? '면접 진행 전' :
+                      hasInterviewEvaluated ? '평가 완료' : '미평가'
+                    }
+                    customClassName={
+                      isDocumentStage ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                      hasInterviewEvaluated 
+                        ? 'bg-green-100 text-green-800 border-green-200' 
+                        : 'bg-gray-100 text-gray-700 border-gray-200'
                     }
                   />
                 </td>

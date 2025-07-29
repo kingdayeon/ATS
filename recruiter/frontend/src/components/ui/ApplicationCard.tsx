@@ -107,6 +107,17 @@ const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onS
               />
             )}
             
+            {/* 서류/면접 단계에서만 평가 완료/미평가 뱃지 표시 */}
+            {(isDocumentStage || isInterviewStage) && (
+              <StatusBadge 
+                status={hasEvaluated ? 'evaluated' : 'not_evaluated'}
+                customText={hasEvaluated ? '평가 완료' : '미평가'}
+                customClassName={hasEvaluated 
+                  ? 'bg-green-100 text-green-800 border-green-200' 
+                  : 'bg-gray-100 text-gray-700 border-gray-200'
+                }
+              />
+            )}
 
           </>
         </div>
