@@ -10,16 +10,17 @@ const ApplicantsTable = () => {
   const applications = filteredApplications();
 
   return (
-    <div className="bg-white shadow-sm rounded-lg overflow-x-auto border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+      <div className="overflow-x-auto scrollbar-hide">
+        <table className="w-full divide-y divide-gray-200 table-fixed">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이름</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">지원 직책</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평균 점수</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">내 평가</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">이름</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">이메일</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">지원 직책</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">상태</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">평균 점수</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">내 평가</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -29,9 +30,9 @@ const ApplicantsTable = () => {
 
             return (
               <tr key={app.id} onClick={() => navigate(`/application/${app.id}`)} className="hover:bg-gray-50 cursor-pointer">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.jobs?.title || getJobTitleById(app.job_id)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 truncate">{app.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate">{app.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate">{app.jobs?.title || getJobTitleById(app.job_id)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <StatusBadge status={app.final_status !== 'pending' ? app.final_status : app.status} />
                 </td>
@@ -39,16 +40,21 @@ const ApplicantsTable = () => {
                   {averageScore !== null ? `${averageScore}점` : '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {hasEvaluated
-                    ? <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200">평가 완료</span>
-                    : <span className="font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200">미평가</span>
-                  }
+                  <StatusBadge 
+                    status={hasEvaluated ? 'evaluated' : 'not_evaluated'} 
+                    customText={hasEvaluated ? '평가 완료' : '미평가'}
+                    customClassName={hasEvaluated 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                    }
+                  />
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      </div>
       {applications.length === 0 && (
         <p className="text-center py-12 text-gray-500">조건에 맞는 지원자가 없습니다.</p>
       )}

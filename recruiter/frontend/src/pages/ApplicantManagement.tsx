@@ -31,7 +31,7 @@ const ApplicantManagement = () => {
         </div>
       </header>
 
-      <main className="flex-grow overflow-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-grow overflow-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
         <p className="mb-6 text-sm text-gray-600">모든 채용 공고의 지원자 현황을 검색하고 관리합니다.</p>
         
         <ApplicantFilters />

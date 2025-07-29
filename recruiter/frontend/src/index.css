@@ -7,8 +7,14 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* 데스크톱에서는 전체 페이지 스크롤 방지 */
+  overflow-y: auto; /* 세로 스크롤 허용 */
   overflow-x: hidden; /* 가로 스크롤 항상 숨김 */
+  scrollbar-width: none; /* Firefox 세로 스크롤바 숨김 */
+  -ms-overflow-style: none; /* IE/Edge 세로 스크롤바 숨김 */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari 세로 스크롤바 숨김 */
 }
 
 /* 루트 컨테이너 높이 고정 */
@@ -77,5 +83,15 @@ body {
 }
 
 .scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 추가 스크롤바 숨김 스타일 */
+.overflow-x-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
   display: none;
 }

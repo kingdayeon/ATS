@@ -77,19 +77,20 @@ const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onS
           {statusKey !== 'accepted' && statusKey !== 'final' && (
             <>
               {averageScore !== null && (
-                <span className="font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
-                  평균 {averageScore}점
-                </span>
+                <StatusBadge 
+                  status="evaluated"
+                  customText={`평균 ${averageScore}점`}
+                  customClassName="bg-blue-100 text-blue-800 border-blue-200"
+                />
               )}
-              {hasEvaluated ? (
-                <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200">
-                  평가 완료
-                </span>
-              ) : (
-                <span className="font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full border border-gray-200">
-                  미평가
-                </span>
-              )}
+              <StatusBadge 
+                status={hasEvaluated ? 'evaluated' : 'not_evaluated'}
+                customText={hasEvaluated ? '평가 완료' : '미평가'}
+                customClassName={hasEvaluated 
+                  ? 'bg-green-100 text-green-800 border-green-200' 
+                  : 'bg-gray-100 text-gray-700 border-gray-200'
+                }
+              />
             </>
           )}
         </div>

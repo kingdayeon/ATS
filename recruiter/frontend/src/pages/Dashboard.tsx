@@ -32,6 +32,7 @@ const Dashboard = () => {
   const { user, canAccessJob, logout } = useAuthStore();
   const {
     jobs,
+    applications,
     selectedJobId,
     isLoading,
     error,
@@ -60,6 +61,7 @@ const Dashboard = () => {
 
   // 🚀 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
+    console.log('🚀 Dashboard 컴포넌트 마운트 - fetchInitialData 호출');
     fetchInitialData(); // 올바른 함수 호출
   }, [fetchInitialData]);
 
@@ -147,6 +149,7 @@ const Dashboard = () => {
 
   // useMemo를 사용하여 정렬된 컬럼별 데이터를 계산
   const { submittedItems, interviewItems, acceptedItems, finalItems } = useMemo(() => {
+    console.log('🔄 useMemo 실행 - 데이터 계산 시작');
     const submitted = getApplicationsByStatus('submitted');
     const interview = getApplicationsByStatus('interview');
     const accepted = getApplicationsByStatus('accepted');
@@ -155,13 +158,23 @@ const Dashboard = () => {
       ...getApplicationsByFinalStatus('offer_declined'),
     ];
 
-    return {
+    const result = {
       submittedItems: sortApplications(submitted, sortOption),
       interviewItems: sortApplications(interview, sortOption),
       acceptedItems: sortApplications(accepted, sortOption),
       finalItems: sortApplications(final, sortOption),
     };
-  }, [sortOption, getApplicationsByStatus, getApplicationsByFinalStatus]);
+    
+    console.log('📊 계산된 데이터:', {
+      submitted: result.submittedItems.length,
+      interview: result.interviewItems.length,
+      accepted: result.acceptedItems.length,
+      final: result.finalItems.length,
+      sortOption
+    });
+    
+    return result;
+  }, [sortOption, getApplicationsByStatus, getApplicationsByFinalStatus, applications, selectedJobId]);
 
   // 컬럼별로 데이터를 가져와서 각각 정렬하는 것이 올바른 접근
   const getSortedApplicationsByStatus = (status: ApplicationStatus) => {
@@ -175,7 +188,7 @@ const Dashboard = () => {
   };
 
   // 🔄 로딩 중
-  if (isLoading && !selectedJobId) {
+  if (isLoading) {
     return <LoadingSpinner message="대시보드 로딩 중..." />;
   }
 

@@ -58,6 +58,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   // 📊 채용공고 목록 가져오기
   fetchInitialData: async () => {
     try {
+      console.log('🔄 fetchInitialData 시작');
       set({ isLoading: true, error: null });
 
       const { data: jobs, error: jobsError } = await supabase
@@ -65,18 +66,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         .select('*')
         .eq('is_active', true);
       if (jobsError) throw jobsError;
+      console.log('📋 jobs 로드 완료:', jobs?.length || 0);
 
       // 💣 [버그 수정] 기본 테이블 대신, 평가 정보가 포함된 DB 함수를 호출하도록 수정
       const { data: applications, error: applicationsError } = await supabase
         .rpc('get_applications_for_dashboard');
         
       if (applicationsError) throw applicationsError;
+      console.log('👥 applications 로드 완료:', applications?.length || 0);
 
       set({ 
         jobs: jobs || [], 
         applications: (applications as Application[]) || [],
-        isLoading: false 
+        isLoading: false,
+        sortOption: 'latest' // 강제로 최신순 설정
       });
+      console.log('✅ fetchInitialData 완료');
       
     } catch (error: any) {
       console.error('초기 데이터 로딩 실패:', error);
@@ -94,14 +99,35 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   // Getter는 정렬 없이 필터링만 담당하도록 수정
   getApplicationsByStatus: (status: ApplicationStatus) => {
     const { applications, selectedJobId } = get();
-    return applications.filter(app => 
+    console.log(`🔍 getApplicationsByStatus(${status}) 호출:`, { 
+      applicationsCount: applications.length, 
+      selectedJobId 
+    });
+    
+    // selectedJobId가 null이면 모든 지원자를 반환
+    if (!selectedJobId) {
+      const filtered = applications.filter(app => 
+        app.status === status && app.final_status === 'pending'
+      );
+      console.log(`📊 ${status} 상태 지원자 (전체):`, filtered.length);
+      return filtered;
+    }
+    const filtered = applications.filter(app => 
       app.job_id === selectedJobId && app.status === status && app.final_status === 'pending'
     );
+    console.log(`📊 ${status} 상태 지원자 (job ${selectedJobId}):`, filtered.length);
+    return filtered;
   },
 
   // 🚀 추가: 최종 결정된 지원자를 필터링하는 getter
   getApplicationsByFinalStatus: (finalStatus: FinalStatus) => {
     const { applications, selectedJobId } = get();
+    // selectedJobId가 null이면 모든 지원자를 반환
+    if (!selectedJobId) {
+      return applications.filter(app => 
+        app.final_status === finalStatus
+      );
+    }
     return applications.filter(app => 
       app.job_id === selectedJobId && app.final_status === finalStatus
     );
