@@ -1,6 +1,6 @@
 import type { Application, Job } from '../../../../../shared/types';
 import StatusBadge from '../ui/StatusBadge'; // 통합 뱃지 import
-import { useAuthStore } from '../../store/authStore'; // authStore import 추가
+// import { useAuthStore } from '../../store/authStore'; // authStore import 추가
 
 interface ApplicationInfoProps {
   application: Application;
@@ -8,24 +8,20 @@ interface ApplicationInfoProps {
 }
 
 const ApplicationInfo = ({ application, job }: ApplicationInfoProps) => {
-  const { user } = useAuthStore(); // 현재 로그인한 유저 정보 가져오기
+  // const { user } = useAuthStore(); // 현재 로그인한 유저 정보 가져오기
 
   // 현재 상태에 따라 적절한 평가 정보 선택
   const isDocumentStage = application.status === 'submitted';
-  const isInterviewStage = application.status === 'interview';
-  const isOfferStage = application.status === 'accepted';
-  const isFinalStage = application.final_status === 'hired' || application.final_status === 'offer_declined';
   
   // 현재 단계의 평가 정보 (면접 단계 이후에는 면접 평가 사용)
-  const currentEvaluatorIds = isDocumentStage 
-    ? (application.document_evaluator_ids || [])
-    : (application.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
+  // const currentEvaluatorIds = isDocumentStage 
+  //   ? (application.document_evaluator_ids || [])
+  //   : (application.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
     
   const currentAverageScore = isDocumentStage
     ? application.document_average_score
     : application.interview_average_score; // 면접 이후 단계는 면접 평가 사용
   
-  const hasEvaluated = user ? currentEvaluatorIds.includes(user.id) : false;
   const averageScore = currentAverageScore != null ? Math.round(currentAverageScore) : null;
   
   // 서류 평가 정보 (면접 단계에서도 표시용)

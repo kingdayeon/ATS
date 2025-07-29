@@ -44,7 +44,7 @@ const StatusColumn = ({
     
     try {
       const dragData = JSON.parse(e.dataTransfer.getData('application/json'));
-      const { id, currentStatus, name } = dragData;
+      const { id, currentStatus } = dragData;
       
       // 같은 상태로 드롭하는 경우 무시
       if (currentStatus === statusKey) {

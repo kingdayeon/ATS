@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { format, addDays } from 'date-fns';
 import type { InterviewSettings } from '../../../../../shared/types';
-import { supabase } from '../../../../../shared/lib/supabase';
 
 interface InterviewScheduleModalProps {
   isOpen: boolean;

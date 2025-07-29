@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { TimeSlot } from '../../../../shared/types';
-import { supabase } from '../../../../shared/lib/supabase';
+import { supabase } from '../lib/supabase';
 import { validateInterviewToken } from '../../../../shared/utils';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
-import { useAuthStore } from '../store/authStore';
 
 // 지원자 정보
 interface ApplicantInfo {

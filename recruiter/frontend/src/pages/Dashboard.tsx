@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import type { Application, ApplicationStatus, FinalStatus, InterviewSettings } from '../../../../shared/types';
+import type { Application, ApplicationStatus, InterviewSettings } from '../../../../shared/types';
 
 
 // 컴포넌트들

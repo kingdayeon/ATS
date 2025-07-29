@@ -1,14 +1,14 @@
 import { create } from 'zustand';
-import { supabase } from '../../../../shared/lib/supabase';
+import { supabase } from '../lib/supabase';
 // import { sendStatusChangeEmail } from '../../../../shared/services/email'; // 이메일 직접 발송 로직은 Edge Function으로 이동했으므로 주석 처리 또는 삭제
 import type {
-  ApplicationStatus,
-  Application,
   Job,
-  FinalStatus, // 추가
-  InterviewSettings, // shared/types에서 직접 가져오기
+  Application,
+  ApplicationStatus,
+  InterviewSettings,
+  FinalStatus
 } from '../../../../shared/types';
-import { useAuthStore } from './authStore';
+// import { useAuthStore } from './authStore';
 
 export type SortOption = 
   | 'latest' 
@@ -197,7 +197,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       // 상태 변경 후 대시보드 데이터를 다시 불러와서 평가 정보 업데이트
       const { data: freshData, error: refreshError } = await supabase.rpc('get_applications_for_dashboard');
       if (!refreshError && freshData) {
-        set(state => ({
+        set(_ => ({
           applications: freshData.map((app: any) => ({
             ...app,
             jobs: app.jobs ? (typeof app.jobs === 'string' ? JSON.parse(app.jobs) : app.jobs) : null

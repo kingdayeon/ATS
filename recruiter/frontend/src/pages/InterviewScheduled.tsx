@@ -1,7 +1,7 @@
-import { useParams } from 'react-router-dom';
+// import { useParams } from 'react-router-dom';
 
 const InterviewScheduled = () => {
-  const { applicationId } = useParams();
+  // const { applicationId } = useParams();
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

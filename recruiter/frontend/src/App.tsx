@@ -12,7 +12,7 @@ import InterviewScheduled from './pages/InterviewScheduled';
 import ApplicantManagement from './pages/ApplicantManagement'; // 페이지 import
 
 function App() {
-  const { isLoading, isAuthenticated, setSession, setLoading } = useAuthStore();
+  const { isLoading, isAuthenticated, setSession } = useAuthStore();
 
   useEffect(() => {
     // 1. 즉시 현재 세션 정보를 가져와서 상태를 설정

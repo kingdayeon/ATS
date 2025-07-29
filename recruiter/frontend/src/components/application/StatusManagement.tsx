@@ -3,7 +3,6 @@ import type { ApplicationStatus } from '../../../../../shared/types';
 import { useAuthStore } from '../../store/authStore';
 import InterviewScheduleModal from '../interview/InterviewScheduleModal';
 import type { InterviewSettings } from '../../../../../shared/types';
-import { supabase } from '../../../../../shared/lib/supabase';
 
 interface StatusManagementProps {
   currentStatus: ApplicationStatus;
@@ -49,17 +48,7 @@ const StatusManagement = ({
     }
   };
   
-  const handleSelectChange = (value: ApplicationStatus) => {
-    if (value === 'interview') {
-      handleOpenModal();
-    } else {
-      // 면접이 아닌 경우 바로 상태 변경
-      const nextStatus = getNextStatus(value);
-      if (nextStatus) {
-        onStatusChange(nextStatus);
-      }
-    }
-  };
+  // 상태별 다음 단계 조회
 
   // 다음 단계 상태 계산
   const getNextStatus = (status: ApplicationStatus): ApplicationStatus | null => {

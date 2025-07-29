@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { ApplicationStatus, Application, Job, InterviewSettings } from '../../../../shared/types';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import { supabase } from '../../../../shared/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 
 // 분리된 컴포넌트들
@@ -14,7 +14,6 @@ import EvaluationSection from '../components/application/EvaluationSection'; // 
 import PDFViewer from '../components/application/PDFViewer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
-import InterviewScheduleModal from '../components/interview/InterviewScheduleModal';
 
 const ApplicationDetail = () => {
   const { id } = useParams<{ id: string }>();

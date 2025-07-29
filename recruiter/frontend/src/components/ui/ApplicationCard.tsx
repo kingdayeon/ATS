@@ -2,7 +2,7 @@ import type { Application, Job, ApplicationStatus } from '../../../../../shared/
 import { useAuthStore } from '../../store/authStore';
 import StatusBadge from './StatusBadge';
 import { useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 
 
 interface ApplicationCardProps {
@@ -13,7 +13,7 @@ interface ApplicationCardProps {
   onStatusChange?: (applicationId: number, newStatus: string) => void;
 }
 
-const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onStatusChange }: ApplicationCardProps) => {
+const ApplicationCard = ({ application, statusKey }: ApplicationCardProps) => {
   const navigate = useNavigate();
   const { user, canChangeApplicationStatus } = useAuthStore();
   
@@ -43,23 +43,18 @@ const ApplicationCard = ({ application, selectedJob, statusKey, onMenuClick, onS
     : null;
 
   // ... (기존 드롭다운 및 핸들러 로직은 그대로 유지)
-  const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const handleCardClick = () => navigate(`/application/${application.id}`);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
+        // setShowDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const canChangeStatus = canChangeApplicationStatus();
-  const handleStatusChange = (newStatus: string) => {
-    onStatusChange?.(application.id, newStatus);
-    setShowDropdown(false);
-  };
 
   return (
     <div 

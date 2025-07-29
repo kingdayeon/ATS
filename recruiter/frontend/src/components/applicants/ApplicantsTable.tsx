@@ -30,17 +30,6 @@ const ApplicantsTable = () => {
           {applications.map(app => {
             // 현재 상태에 따라 적절한 평가 정보 선택
             const isDocumentStage = app.status === 'submitted';
-            const isInterviewStage = app.status === 'interview';
-            const isOfferStage = app.status === 'accepted';
-            const isFinalStage = app.final_status === 'hired' || app.final_status === 'offer_declined';
-            
-            const currentAverageScore = isDocumentStage
-              ? app.document_average_score
-              : app.interview_average_score; // 면접 이후 단계는 면접 평가 사용
-              
-            const currentEvaluatorIds = isDocumentStage 
-              ? (app.document_evaluator_ids || [])
-              : (app.interview_evaluator_ids || []); // 면접 이후 단계는 면접 평가 사용
             
             // 각 단계별 평가 정보 계산
             const documentScore = app.document_average_score != null ? Math.round(app.document_average_score) : null;
