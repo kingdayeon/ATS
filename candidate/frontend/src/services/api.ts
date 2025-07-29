@@ -2,11 +2,11 @@ import { supabase } from '@/lib/supabase'
 import type { Database } from '../../../../shared/types'
 import type { ApplicationFormData } from '@/types'
 
-// 🔄 공통 API 함수들은 shared/services/api에서 import
-export { getJobs, getJobById, getApplications } from '../../../../shared/services/api';
+// 🔄 공통 API 함수들은 로컬 shared-api에서 import
+export { getJobs, getJobById, getApplications } from './shared-api';
 
-// 📎 파일 업로드는 shared 버전 사용
-export { uploadApplicationFile as uploadFile } from '../../../../shared/services/api';
+// 📎 파일 업로드는 로컬 shared-api 버전 사용
+export { uploadApplicationFile as uploadFile } from './shared-api';
 
 type ApplicationInsert = Database['public']['Tables']['applications']['Insert']
 
