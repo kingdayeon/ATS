@@ -73,6 +73,11 @@ export interface Application {
   created_at: string;
   updated_at: string;
   jobs?: { title: string; department: string; }; // jobs 필드 추가
+
+  // DB 함수로부터 추가되는 평가 정보 (선택적)
+  average_score?: number;
+  evaluation_count?: number;
+  evaluator_ids?: number[];
 }
 
 export interface ApplicationFormData {

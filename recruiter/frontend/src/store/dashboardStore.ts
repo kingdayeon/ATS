@@ -21,11 +21,8 @@ interface DashboardState {
   error: string | null;
   
   // 📝 액션 - 데이터 로딩
-  fetchJobs: () => Promise<void>;
-  fetchApplications: (jobId: number) => Promise<void>;
-  
-  // 📝 액션 - 선택/필터링
-  setSelectedJob: (jobId: number) => void;
+  fetchInitialData: () => Promise<void>; // fetchJobs와 fetchApplications를 대체
+  setSelectedJob: (jobId: number | null) => void;
   getApplicationsByStatus: (status: ApplicationStatus) => Application[];
   getApplicationsByFinalStatus: (finalStatus: FinalStatus) => Application[];
   getApplicationById: (id: number) => Application | null;
@@ -37,6 +34,7 @@ interface DashboardState {
   // 📝 유틸리티
   getStatusText: (status: ApplicationStatus) => string;
   getStatusColor: (status: ApplicationStatus) => string;
+  updateApplicationEvaluation: (applicationId: number, userId: number, newScore: number) => void;
   
   // 🧹 초기화
   reset: () => void;
@@ -51,48 +49,39 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   error: null,
 
   // 📊 채용공고 목록 가져오기
-  fetchJobs: async () => {
+  fetchInitialData: async () => {
     try {
       set({ isLoading: true, error: null });
 
-      const { data: allJobs, error } = await supabase
+      const { data: jobs, error: jobsError } = await supabase
         .from('jobs')
         .select('*')
         .eq('is_active', true);
+      if (jobsError) throw jobsError;
 
-      if (error) throw error;
+      // 💣 [버그 수정] 기본 테이블 대신, 평가 정보가 포함된 DB 함수를 호출하도록 수정
+      const { data: applications, error: applicationsError } = await supabase
+        .rpc('get_applications_for_dashboard');
+        
+      if (applicationsError) throw applicationsError;
 
-      set({ jobs: allJobs || [], isLoading: false });
+      set({ 
+        jobs: jobs || [], 
+        applications: (applications as Application[]) || [],
+        isLoading: false 
+      });
       
-    } catch (error) {
-      console.error('채용공고 로딩 실패:', error);
-      set({ error: '채용공고를 불러오는데 실패했습니다.', isLoading: false });
-    }
-  },
-
-  // 📊 지원자 데이터 가져오기
-  fetchApplications: async (jobId: number) => {
-    try {
-      set({ isLoading: true, error: null });
-
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*') // 'final_status'를 포함한 모든 컬럼을 가져옴
-        .eq('job_id', jobId);
-
-      if (error) throw error;
-
-      set({ applications: applications || [], isLoading: false });
-    } catch (error) {
-      console.error('지원서 데이터 로딩 실패:', error);
-      set({ error: '지원서 데이터를 불러오는데 실패했습니다.', isLoading: false });
+    } catch (error: any) {
+      console.error('초기 데이터 로딩 실패:', error);
+      set({ error: '데이터를 불러오는데 실패했습니다.', isLoading: false });
     }
   },
 
   // 🎯 채용공고 선택
-  setSelectedJob: (jobId: number) => {
+  setSelectedJob: (jobId: number | null) => {
     set({ selectedJobId: jobId });
-    get().fetchApplications(jobId);
+    // 💣 [버그 수정] 문제를 일으키는 오래된 함수 호출을 제거합니다.
+    // get().fetchApplications(jobId);
   },
 
   // 🔍 상태별 지원자 필터링
@@ -217,5 +206,27 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       isLoading: false,
       error: null
     });
-  }
+  },
+
+  // 평가 등록 시 대시보드 데이터를 실시간으로 업데이트하는 함수
+  updateApplicationEvaluation: (applicationId, userId, newScore) => {
+    set(state => ({
+      applications: state.applications.map(app => {
+        if (app.id === applicationId) {
+          const newEvaluatorIds = [...(app.evaluator_ids || []), userId];
+          const currentTotalScore = (app.average_score || 0) * (app.evaluation_count || 0);
+          const newEvaluationCount = (app.evaluation_count || 0) + 1;
+          const newAverageScore = (currentTotalScore + newScore) / newEvaluationCount;
+
+          return {
+            ...app,
+            evaluator_ids: newEvaluatorIds,
+            average_score: newAverageScore,
+            evaluation_count: newEvaluationCount,
+          };
+        }
+        return app;
+      }),
+    }));
+  },
 })); 

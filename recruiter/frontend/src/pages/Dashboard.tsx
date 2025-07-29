@@ -19,7 +19,7 @@ const Dashboard = () => {
     selectedJobId,
     isLoading,
     error,
-    fetchJobs,
+    fetchInitialData, // 올바른 함수 이름
     setSelectedJob,
     getApplicationsByStatus,
     getApplicationsByFinalStatus, // 추가
@@ -43,8 +43,8 @@ const Dashboard = () => {
 
   // 🚀 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    fetchInitialData(); // 올바른 함수 호출
+  }, [fetchInitialData]);
 
   // 🎯 권한에 따른 채용공고 필터링
   const filteredJobs = jobs.filter(job => canAccessJob(job.department));

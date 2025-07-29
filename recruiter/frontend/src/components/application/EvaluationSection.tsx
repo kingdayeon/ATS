@@ -6,10 +6,12 @@ import { useParams } from 'react-router-dom';
 import { Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useDashboardStore } from '../../store/dashboardStore'; // 대시보드 스토어 import
 
 const EvaluationSection = () => {
   const { id: applicationId } = useParams<{ id: string }>();
   const { user, canEvaluate } = useAuthStore(); // canChangeApplicationStatus -> canEvaluate
+  const updateApplicationEvaluation = useDashboardStore(state => state.updateApplicationEvaluation); // 스토어 액션 가져오기
   
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [score, setScore] = useState(50);
@@ -55,9 +57,20 @@ const EvaluationSection = () => {
     if (error) {
       alert(`평가 등록 실패: ${error.message}`);
     } else {
-      // 전체 평가 목록에 새로 등록된 평가를 추가
-      setEvaluations(prev => [data as Evaluation, ...prev]);
+      const newEval = { ...data, users: { name: (data.users as any).name, email: (data.users as any).email } } as Evaluation;
+      setEvaluations(prev => [newEval, ...prev]);
+      // setMyEvaluation(newEval); // This line was removed as per the edit hint
       setComment('');
+
+      // ✨ 대시보드 스토어에 평가가 등록되었음을 알림
+      updateApplicationEvaluation(parseInt(applicationId), user.id, score);
+
+      // --- 요청하신 콘솔 로그 ---
+      console.log('--- 평가 등록 완료 ---');
+      console.log('등록된 평가:', newEval);
+      console.log('업데이트된 전체 평가 목록:', [newEval, ...evaluations]);
+      console.log('대시보드 업데이트 호출:', { applicationId: parseInt(applicationId), userId: user.id, newScore: score });
+      // --------------------------
     }
   };
   
