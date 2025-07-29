@@ -4,7 +4,7 @@ import type { Application, Job, ApplicationStatus, FinalStatus } from '../../../
 import { useAuthStore } from './authStore';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
-export type SortOption = 'latest' | 'name_asc' | 'status_asc' | 'score_desc' | 'score_asc';
+export type SortOption = 'latest' | 'oldest' | 'name_asc' | 'status_asc' | 'score_desc' | 'score_asc';
 
 interface ApplicantState {
   allApplications: Application[];
@@ -148,6 +148,9 @@ export const useApplicantStore: UseBoundStore<StoreApi<ApplicantState>> = create
         break;
       case 'score_asc':
         filtered.sort((a, b) => (a.average_score || 0) - (b.average_score || 0));
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;
       case 'latest':
       default:

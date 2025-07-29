@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import type { ApplicationStatus, Application, InterviewSettings } from '../../../../shared/types';
-// 💣 [제거] import type { InterviewSettings } from '../services/calendar';
+import type { Application, ApplicationStatus, FinalStatus, InterviewSettings } from '../../../../shared/types';
+// �� [제거] import type { InterviewSettings } from '../services/calendar';
 
 // 컴포넌트들
 import DashboardHeader from '../components/ui/DashboardHeader';
@@ -11,6 +11,22 @@ import DashboardGrid from '../components/dashboard/DashboardGrid';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
 import InterviewScheduleModal from '../components/interview/InterviewScheduleModal';
+import CustomDropdown from '../components/ui/CustomDropdown'; // 커스텀 드롭다운 import
+import type { SortOption } from '../store/dashboardStore'; // SortOption 타입 import
+
+const sortApplications = (apps: Application[], option: SortOption): Application[] => {
+  switch (option) {
+    case 'oldest':
+      return [...apps].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    case 'score_desc':
+      return [...apps].sort((a, b) => (b.average_score || 0) - (a.average_score || 0));
+    case 'score_asc':
+      return [...apps].sort((a, b) => (a.average_score || 0) - (b.average_score || 0));
+    case 'latest':
+    default:
+      return [...apps].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+};
 
 const Dashboard = () => {
   const { user, canAccessJob, logout } = useAuthStore();
@@ -25,6 +41,7 @@ const Dashboard = () => {
     getApplicationsByFinalStatus, // 추가
     getJobById,
     updateApplicationStatus,
+    sortOption, setSortOption, // 정렬 상태와 액션 추가
     getApplicationById
   } = useDashboardStore();
 
@@ -121,6 +138,42 @@ const Dashboard = () => {
     }
   };
 
+  const sortOptions = [
+    { value: 'latest', label: '최신 순' },
+    { value: 'oldest', label: '오래된 순' },
+    { value: 'score_desc', label: '평균 높은 순' },
+    { value: 'score_asc', label: '평균 낮은 순' },
+  ];
+
+  // useMemo를 사용하여 정렬된 컬럼별 데이터를 계산
+  const { submittedItems, interviewItems, acceptedItems, finalItems } = useMemo(() => {
+    const submitted = getApplicationsByStatus('submitted');
+    const interview = getApplicationsByStatus('interview');
+    const accepted = getApplicationsByStatus('accepted');
+    const final = [
+      ...getApplicationsByFinalStatus('hired'),
+      ...getApplicationsByFinalStatus('offer_declined'),
+    ];
+
+    return {
+      submittedItems: sortApplications(submitted, sortOption),
+      interviewItems: sortApplications(interview, sortOption),
+      acceptedItems: sortApplications(accepted, sortOption),
+      finalItems: sortApplications(final, sortOption),
+    };
+  }, [sortOption, getApplicationsByStatus, getApplicationsByFinalStatus]);
+
+  // 컬럼별로 데이터를 가져와서 각각 정렬하는 것이 올바른 접근
+  const getSortedApplicationsByStatus = (status: ApplicationStatus) => {
+    const apps = getApplicationsByStatus(status);
+    return sortApplications(apps, sortOption);
+  };
+  
+  const getSortedApplicationsByFinalStatus = (finalStatus: FinalStatus) => {
+    const apps = getApplicationsByFinalStatus(finalStatus);
+    return sortApplications(apps, sortOption);
+  };
+
   // 🔄 로딩 중
   if (isLoading && !selectedJobId) {
     return <LoadingSpinner message="대시보드 로딩 중..." />;
@@ -161,13 +214,23 @@ const Dashboard = () => {
 
         {/* 📊 메인 대시보드 */}
         <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex flex-col lg:min-h-0">
-          {/* 🎯 선택된 채용공고 정보 */}
-          <JobSelector selectedJob={selectedJob} />
-
+          <div className="flex justify-between items-center mb-4">
+            <JobSelector selectedJob={selectedJob} />
+            <div className="w-48">
+              <CustomDropdown
+                options={sortOptions}
+                value={sortOption}
+                onChange={(val) => setSortOption(val as SortOption)}
+              />
+            </div>
+          </div>
+          
           {/* 📋 상태별 지원자 컬럼들 */}
           <DashboardGrid
-            getApplicationsByStatus={getApplicationsByStatus}
-            getApplicationsByFinalStatus={getApplicationsByFinalStatus} // 추가
+            submittedItems={submittedItems}
+            interviewItems={interviewItems}
+            acceptedItems={acceptedItems}
+            finalItems={finalItems}
             selectedJob={selectedJob}
             onStatusChange={handleStatusChange}
           />

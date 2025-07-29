@@ -10,6 +10,8 @@ import type {
 } from '../../../../shared/types';
 import { useAuthStore } from './authStore';
 
+export type SortOption = 'latest' | 'oldest' | 'score_desc' | 'score_asc';
+
 interface DashboardState {
   // 📊 데이터
   jobs: Job[];
@@ -38,6 +40,8 @@ interface DashboardState {
   
   // 🧹 초기화
   reset: () => void;
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -47,6 +51,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   selectedJobId: null,
   isLoading: false,
   error: null,
+  sortOption: 'latest',
+
+  setSortOption: (option: SortOption) => set({ sortOption: option }),
 
   // 📊 채용공고 목록 가져오기
   fetchInitialData: async () => {
@@ -84,17 +91,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     // get().fetchApplications(jobId);
   },
 
-  // 🔍 상태별 지원자 필터링
+  // Getter는 정렬 없이 필터링만 담당하도록 수정
   getApplicationsByStatus: (status: ApplicationStatus) => {
-    const { applications } = get();
-    // '최종 결과'가 결정된 지원자는 기존 칸반 보드에 나타나지 않도록 필터링
-    return applications.filter(app => app.status === status && app.final_status === 'pending');
+    const { applications, selectedJobId } = get();
+    return applications.filter(app => 
+      app.job_id === selectedJobId && app.status === status && app.final_status === 'pending'
+    );
   },
 
   // 🚀 추가: 최종 결정된 지원자를 필터링하는 getter
   getApplicationsByFinalStatus: (finalStatus: FinalStatus) => {
-    const { applications } = get();
-    return applications.filter(app => app.final_status === finalStatus);
+    const { applications, selectedJobId } = get();
+    return applications.filter(app => 
+      app.job_id === selectedJobId && app.final_status === finalStatus
+    );
   },
 
   // 🔍 지원자 ID로 찾기
@@ -204,7 +214,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       applications: [],
       selectedJobId: null,
       isLoading: false,
-      error: null
+      error: null,
+      sortOption: 'latest',
     });
   },
 

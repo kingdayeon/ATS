@@ -17,7 +17,8 @@ const ApplicantFilters = () => {
   const availableJobs = getAvailableJobs();
   const jobOptions = [{ value: 'all', label: '모든 직무' }, ...availableJobs.map(j => ({ value: j.id, label: j.title }))];
   const sortOptions = [
-    { value: 'latest', label: '최신순' },
+    { value: 'latest', label: '최신 순' },
+    { value: 'oldest', label: '오래된 순' },
     { value: 'name_asc', label: '이름순' },
     { value: 'status_asc', label: '상태순' },
     { value: 'score_desc', label: '평균 높은 순' },
