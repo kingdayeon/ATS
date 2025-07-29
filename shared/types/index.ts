@@ -328,4 +328,17 @@ export interface TimeSlot {
   start: string; // ISO 문자열
   end: string;   // ISO 문자열
   available: boolean;
+}
+
+export interface Evaluation {
+  id: number;
+  created_at: string;
+  user_id: number; // string -> number로 수정
+  application_id: number;
+  score: number;
+  comment: string;
+  users: { // JOIN된 사용자 정보
+    name: string;
+    email: string;
+  };
 } 

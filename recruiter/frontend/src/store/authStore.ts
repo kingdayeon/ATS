@@ -13,6 +13,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   canAccessJob: (department: string) => boolean;
   canChangeApplicationStatus: () => boolean;
+  canEvaluate: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -81,9 +82,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 지원자 상태 변경 권한 (팀장 이상)
   canChangeApplicationStatus: () => {
     const { user } = get();
-    if (!user) return false;
-    
-    // admin과 manager 권한만 가능
-    return user.role === 'admin' || user.role === 'manager';
-  }
+    return user?.role === 'admin' || user?.role === 'manager';
+  },
+
+  // viewer(팀원)도 평가할 수 있도록 새로운 권한 함수 추가
+  canEvaluate: () => {
+    const { user } = get();
+    // 역할이 할당된 모든 사용자는 평가 가능
+    return !!user?.role; 
+  },
 })); 

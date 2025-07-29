@@ -171,10 +171,10 @@ const ApplicationDetail = () => {
 
       {/* 메인 컨텐츠 그리드 (flex-grow로 남은 공간 채우기) */}
       <main className="flex-1 min-h-0">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 h-full flex gap-6 xl:gap-8">
+        <div className="p-4 sm:p-6 lg:p-8 h-full flex gap-6 xl:gap-8">
           
-          {/* 왼쪽 컬럼 (정보 + 평가) */}
-          <div className="w-full max-w-sm flex-shrink-0 space-y-6">
+          {/* 왼쪽 컬럼 (너비 고정) */}
+          <div className="w-full max-w-xs flex-shrink-0 space-y-6 overflow-y-auto">
             <ApplicationInfo
               application={application}
               job={job}
@@ -186,13 +186,19 @@ const ApplicationDetail = () => {
               applicantName={application.name}
               department={job.department}
             />
-            {showEvaluation && <EvaluationSection />}
           </div>
 
-          {/* 오른쪽 컬럼 (PDF 뷰어) */}
-          <div className="flex-1 min-w-0">
+          {/* 중앙 컬럼 (남은 공간 모두 차지) */}
+          <div className="flex-1 min-w-0 overflow-y-auto rounded-lg">
             <PDFViewer application={application} />
           </div>
+          
+          {/* 오른쪽 컬럼 (평가하기) - 조건부 렌더링 및 너비 고정 */}
+          {showEvaluation && (
+            <div className="w-full max-w-sm flex-shrink-0 space-y-6 overflow-y-auto">
+              <EvaluationSection />
+            </div>
+          )}
           
         </div>
       </main>
