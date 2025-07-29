@@ -4,7 +4,7 @@ import type { ApplicationStatus, Application, Job, InterviewSettings } from '../
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
 import { supabase } from '../../../../shared/lib/supabase';
-// 💣 [제거] import type { InterviewSettings } from '../services/calendar';
+
 
 // 분리된 컴포넌트들
 import ApplicationHeader from '../components/application/ApplicationHeader';
@@ -24,15 +24,14 @@ const ApplicationDetail = () => {
     getApplicationById,
     getJobById,
     updateApplicationStatus,
-    getStatusText,
-    getStatusColor
+
   } = useDashboardStore();
 
   // 로컬 상태 (직접 DB에서 가져온 데이터용)
   const [localApplication, setLocalApplication] = useState<Application | null>(null);
   const [localJob, setLocalJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // 💣 [제거] 더 이상 이 컴포넌트에서 모달 상태를 관리하지 않습니다.
+
   // const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   // 스토어 또는 로컬 상태에서 데이터 가져오기
@@ -81,43 +80,24 @@ const ApplicationDetail = () => {
     const storeApplication = getApplicationById(applicationId);
 
     if (storeApplication) {
-      // 스토어에 데이터가 있으면 사용
-      console.log(`✅ ApplicationDetail: 스토어에서 지원서 발견 - ${storeApplication.name}`);
       setIsLoading(false);
     } else {
-      // 스토어에 없으면 직접 DB에서 가져오기
-      console.log(`🔍 ApplicationDetail: 스토어에 지원서 없음, 직접 DB 조회 - ID ${applicationId}`);
       fetchDirectFromDB(applicationId);
     }
   }, [id, getApplicationById]);
 
-  // ✨ [수정] 상태 변경 핸들러를 하나로 통합하고, interviewSettings를 받도록 수정
+  // 상태 변경 핸들러
   const handleStatusChange = async (newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => {
     if (!application) return;
     try {
-      console.log('상태 변경 시작:', { newStatus, interviewSettings });
-      // 스토어의 함수를 호출할 때 interviewSettings를 함께 전달
       await updateApplicationStatus(application.id, newStatus, interviewSettings);
-      console.log('✅ 상태 변경 완료!');
     } catch (error) {
       console.error('상태 변경 실패:', error);
       alert('상태 변경에 실패했습니다.');
     }
   };
 
-  // 💣 [제거] 이 함수는 더 이상 사용되지 않으며, StatusManagement 컴포넌트 내부 로직으로 통합되었습니다.
-  // const handleScheduleConfirm = async () => {
-  //   if (!application) return;
-  //   try {
-  //     console.log('면접 일정 확정 시작');
-  //     await updateApplicationStatus(application.id, 'interview');
-  //     setScheduleModalOpen(false);
-  //     console.log('✅ 면접 일정 확정 완료!');
-  //   } catch (error) {
-  //     console.error('면접 일정 확정 실패:', error);
-  //     alert('면접 일정 확정에 실패했습니다.');
-  //   }
-  // };
+
 
   // 🔄 로딩 중
   if (isLoading) {

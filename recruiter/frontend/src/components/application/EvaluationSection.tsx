@@ -66,10 +66,7 @@ const EvaluationSection = () => {
       updateApplicationEvaluation(parseInt(applicationId), user.id, score);
 
       // --- 요청하신 콘솔 로그 ---
-      console.log('--- 평가 등록 완료 ---');
-      console.log('등록된 평가:', newEval);
-      console.log('업데이트된 전체 평가 목록:', [newEval, ...evaluations]);
-      console.log('대시보드 업데이트 호출:', { applicationId: parseInt(applicationId), userId: user.id, newScore: score });
+      
       // --------------------------
     }
   };

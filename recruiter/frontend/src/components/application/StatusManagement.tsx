@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ApplicationStatus } from '../../../../../shared/types';
 import { useAuthStore } from '../../store/authStore';
 import InterviewScheduleModal from '../interview/InterviewScheduleModal';
-import type { InterviewSettings } from '../../services/calendar';
+import type { InterviewSettings } from '../../../../../shared/types';
 import { supabase } from '../../../../../shared/lib/supabase';
 
 interface StatusManagementProps {
@@ -29,8 +29,7 @@ const StatusManagement = ({
 
   const handleConfirmSchedule = async (settings: InterviewSettings) => {
     try {
-      // 💣 [제거] 더 이상 DB에 직접 면접 설정을 저장하지 않습니다.
-      // await supabase.from('interview_settings').upsert({
+      
       //   application_id: applicationId,
       //   date_range_start: settings.dateRange.start,
       //   date_range_end: settings.dateRange.end,
@@ -85,7 +84,6 @@ const StatusManagement = ({
   // 면접 승인 버튼 클릭 (모달 표시)
   const handleInterviewApproval = () => {
     if (currentStatus === 'submitted') {
-      console.log('면접 일정 설정 모달 표시');
       handleOpenModal();
     } else {
       // ✨ [변경] getNextStatus를 통해 다음 상태가 있는지 확인하고 변경

@@ -48,7 +48,6 @@ const StatusColumn = ({
       
       // 같은 상태로 드롭하는 경우 무시
       if (currentStatus === statusKey) {
-        console.log(`${name}: 같은 상태로 드롭 무시`);
         return;
       }
 
@@ -59,18 +58,15 @@ const StatusColumn = ({
       
       // 유효하지 않은 상태인 경우 차단
       if (currentIndex === -1 || targetIndex === -1) {
-        console.log(`유효하지 않은 상태: ${currentStatus} -> ${statusKey}`);
         return;
       }
       
       // 역방향 이동 방지 (현재 >= 타겟)
       if (currentIndex >= targetIndex) {
-        console.log(`역방향 이동 불가: ${currentStatus} -> ${statusKey}`);
         alert('이전 단계로는 되돌릴 수 없습니다.\n불합격 처리는 별도 버튼을 사용해주세요.');
         return;
       }
       
-      console.log(`✅ 지원자 ${name}를 ${currentStatus} -> ${statusKey}로 이동`);
       onStatusChange?.(id, statusKey);
     } catch (error) {
       console.error('드롭 데이터 파싱 오류:', error);

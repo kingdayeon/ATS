@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import StatusBadge from './StatusBadge';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { getDepartmentColor } from '../../../../../shared/utils';
+
 
 interface ApplicationCardProps {
   application: Application;

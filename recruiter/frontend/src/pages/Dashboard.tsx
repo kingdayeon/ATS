@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { Application, ApplicationStatus, FinalStatus, InterviewSettings } from '../../../../shared/types';
-// �� [제거] import type { InterviewSettings } from '../services/calendar';
+
 
 // 컴포넌트들
 import DashboardHeader from '../components/ui/DashboardHeader';
@@ -59,20 +59,18 @@ const Dashboard = () => {
     department: ''
   });
 
-  // 🚀 컴포넌트 마운트 시 데이터 로딩
+  // 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {
-    console.log('🚀 Dashboard 컴포넌트 마운트 - fetchInitialData 호출');
-    fetchInitialData(); // 올바른 함수 호출
+    fetchInitialData();
   }, [fetchInitialData]);
 
   // 🎯 권한에 따른 채용공고 필터링
   const filteredJobs = jobs.filter(job => canAccessJob(job.department));
 
-  // 🎯 첫 번째 접근 가능한 job 자동 선택
+  // 첫 번째 접근 가능한 job 자동 선택
   useEffect(() => {
     if (filteredJobs.length > 0 && !selectedJobId) {
       const firstJobId = filteredJobs[0].id;
-      console.log(`🎯 첫 번째 접근 가능한 job 선택: ${firstJobId}`);
       setSelectedJob(firstJobId);
     }
   }, [filteredJobs, selectedJobId, setSelectedJob]);
@@ -86,24 +84,21 @@ const Dashboard = () => {
     setSelectedJob(jobId);
   };
 
-  // ⚡ 상태 변경 핸들러 (드래그앤드롭 + 메뉴 클릭)
+  // 상태 변경 핸들러 (드래그앤드롭 + 메뉴 클릭)
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
-      console.log('대시보드 상태 변경:', { applicationId, newStatus });
-
-      // 🚀 면접 상태로 변경하는 경우 일정 설정 필요한지 확인
+      // 면접 상태로 변경하는 경우 일정 설정 필요한지 확인
       if (newStatus === 'interview') {
         const application = getApplicationById(applicationId);
         if (application && application.status === 'submitted') {
           // submitted -> interview 변경 시 일정 설정 모달 표시
-          console.log('📅 면접 일정 설정 모달 표시 (드래그앤드롭)');
           setScheduleModal({
             isOpen: true,
             applicationId,
             applicantName: application.name,
             department: selectedJob?.department || ''
           });
-          return; // 모달에서 처리하므로 여기서 중단
+          return;
         }
       }
 
@@ -115,25 +110,19 @@ const Dashboard = () => {
     }
   };
 
-  // 📅 면접 일정 설정 완료 핸들러
-  const handleScheduleConfirm = async (settings: InterviewSettings) => { // ✨ settings를 인자로 받도록 수정
+  // 면접 일정 설정 완료 핸들러
+  const handleScheduleConfirm = async (settings: InterviewSettings) => {
     try {
       if (!scheduleModal.applicationId) return;
 
-      console.log('📅 대시보드에서 면접 일정 설정 완료:', { ...scheduleModal, settings });
-      
-      // ✨ updateApplicationStatus 호출 시 settings를 함께 전달
       await updateApplicationStatus(scheduleModal.applicationId, 'interview', settings);
       
-      // 모달 닫기
       setScheduleModal({
         isOpen: false,
         applicationId: null,
         applicantName: '',
         department: ''
       });
-
-      console.log('✅ 대시보드 면접 승인 및 일정 설정 완료');
     } catch (error) {
       console.error('면접 승인 실패:', error);
       alert('면접 승인 중 오류가 발생했습니다.');
@@ -147,9 +136,8 @@ const Dashboard = () => {
     { value: 'score_asc', label: '평균 낮은 순' },
   ];
 
-  // useMemo를 사용하여 정렬된 컬럼별 데이터를 계산
+  // 정렬된 컬럼별 데이터 계산
   const { submittedItems, interviewItems, acceptedItems, finalItems } = useMemo(() => {
-    console.log('🔄 useMemo 실행 - 데이터 계산 시작');
     const submitted = getApplicationsByStatus('submitted');
     const interview = getApplicationsByStatus('interview');
     const accepted = getApplicationsByStatus('accepted');
@@ -158,34 +146,15 @@ const Dashboard = () => {
       ...getApplicationsByFinalStatus('offer_declined'),
     ];
 
-    const result = {
+    return {
       submittedItems: sortApplications(submitted, sortOption),
       interviewItems: sortApplications(interview, sortOption),
       acceptedItems: sortApplications(accepted, sortOption),
       finalItems: sortApplications(final, sortOption),
     };
-    
-    console.log('📊 계산된 데이터:', {
-      submitted: result.submittedItems.length,
-      interview: result.interviewItems.length,
-      accepted: result.acceptedItems.length,
-      final: result.finalItems.length,
-      sortOption
-    });
-    
-    return result;
   }, [sortOption, getApplicationsByStatus, getApplicationsByFinalStatus, applications, selectedJobId]);
 
-  // 컬럼별로 데이터를 가져와서 각각 정렬하는 것이 올바른 접근
-  const getSortedApplicationsByStatus = (status: ApplicationStatus) => {
-    const apps = getApplicationsByStatus(status);
-    return sortApplications(apps, sortOption);
-  };
-  
-  const getSortedApplicationsByFinalStatus = (finalStatus: FinalStatus) => {
-    const apps = getApplicationsByFinalStatus(finalStatus);
-    return sortApplications(apps, sortOption);
-  };
+
 
   // 🔄 로딩 중
   if (isLoading) {

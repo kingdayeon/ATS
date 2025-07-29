@@ -13,33 +13,30 @@ import { useAuthStore } from './authStore';
 export type SortOption = 'latest' | 'oldest' | 'score_desc' | 'score_asc';
 
 interface DashboardState {
-  // 📊 데이터
+  // 데이터
   jobs: Job[];
   applications: Application[];
   selectedJobId: number | null;
   
-  // 🔄 UI 상태
+  // UI 상태
   isLoading: boolean;
   error: string | null;
   
-  // 📝 액션 - 데이터 로딩
-  fetchInitialData: () => Promise<void>; // fetchJobs와 fetchApplications를 대체
+  // 데이터 로딩
+  fetchInitialData: () => Promise<void>;
   setSelectedJob: (jobId: number | null) => void;
   getApplicationsByStatus: (status: ApplicationStatus) => Application[];
   getApplicationsByFinalStatus: (finalStatus: FinalStatus) => Application[];
   getApplicationById: (id: number) => Application | null;
   getJobById: (id: number) => Job | null;
   
-  // 📝 액션 - 상태 변경
+  // 상태 변경
   updateApplicationStatus: (applicationId: number, newStatus: ApplicationStatus, interviewSettings?: InterviewSettings) => Promise<void>;
   
-  // 📝 유틸리티
-  getStatusText: (status: ApplicationStatus) => string;
-  getStatusColor: (status: ApplicationStatus) => string;
+  // 유틸리티
   updateApplicationEvaluation: (applicationId: number, userId: number, newScore: number) => void;
   
-  // 🧹 초기화
-  reset: () => void;
+
   sortOption: SortOption;
   setSortOption: (option: SortOption) => void;
 }
@@ -55,10 +52,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   setSortOption: (option: SortOption) => set({ sortOption: option }),
 
-  // 📊 채용공고 목록 가져오기
+  // 채용공고 목록 가져오기
   fetchInitialData: async () => {
     try {
-      console.log('🔄 fetchInitialData 시작');
       set({ isLoading: true, error: null });
 
       const { data: jobs, error: jobsError } = await supabase
@@ -66,22 +62,18 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         .select('*')
         .eq('is_active', true);
       if (jobsError) throw jobsError;
-      console.log('📋 jobs 로드 완료:', jobs?.length || 0);
 
-      // 💣 [버그 수정] 기본 테이블 대신, 평가 정보가 포함된 DB 함수를 호출하도록 수정
       const { data: applications, error: applicationsError } = await supabase
         .rpc('get_applications_for_dashboard');
         
       if (applicationsError) throw applicationsError;
-      console.log('👥 applications 로드 완료:', applications?.length || 0);
 
       set({ 
         jobs: jobs || [], 
         applications: (applications as Application[]) || [],
         isLoading: false,
-        sortOption: 'latest' // 강제로 최신순 설정
+        sortOption: 'latest'
       });
-      console.log('✅ fetchInitialData 완료');
       
     } catch (error: any) {
       console.error('초기 데이터 로딩 실패:', error);
@@ -89,37 +81,27 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
 
-  // 🎯 채용공고 선택
+  // 채용공고 선택
   setSelectedJob: (jobId: number | null) => {
     set({ selectedJobId: jobId });
-    // 💣 [버그 수정] 문제를 일으키는 오래된 함수 호출을 제거합니다.
-    // get().fetchApplications(jobId);
   },
 
-  // Getter는 정렬 없이 필터링만 담당하도록 수정
+  // 상태별 지원자 필터링
   getApplicationsByStatus: (status: ApplicationStatus) => {
     const { applications, selectedJobId } = get();
-    console.log(`🔍 getApplicationsByStatus(${status}) 호출:`, { 
-      applicationsCount: applications.length, 
-      selectedJobId 
-    });
     
     // selectedJobId가 null이면 모든 지원자를 반환
     if (!selectedJobId) {
-      const filtered = applications.filter(app => 
+      return applications.filter(app => 
         app.status === status && app.final_status === 'pending'
       );
-      console.log(`📊 ${status} 상태 지원자 (전체):`, filtered.length);
-      return filtered;
     }
-    const filtered = applications.filter(app => 
+    return applications.filter(app => 
       app.job_id === selectedJobId && app.status === status && app.final_status === 'pending'
     );
-    console.log(`📊 ${status} 상태 지원자 (job ${selectedJobId}):`, filtered.length);
-    return filtered;
   },
 
-  // 🚀 추가: 최종 결정된 지원자를 필터링하는 getter
+  // 최종 상태별 지원자 필터링
   getApplicationsByFinalStatus: (finalStatus: FinalStatus) => {
     const { applications, selectedJobId } = get();
     // selectedJobId가 null이면 모든 지원자를 반환
@@ -133,24 +115,24 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     );
   },
 
-  // 🔍 지원자 ID로 찾기
+  // 지원자 ID로 찾기
   getApplicationById: (id: number) => {
     const { applications } = get();
     return applications.find(app => app.id === id) || null;
   },
 
-  // 🔍 채용공고 ID로 찾기
+  // 채용공고 ID로 찾기
   getJobById: (id: number) => {
     const { jobs } = get();
     return jobs.find(job => job.id === id) || null;
   },
 
-  // 🔄 지원서 상태 변경
+  // 지원서 상태 변경
   updateApplicationStatus: async (applicationId, newStatus, interviewSettings) => {
-    // 로딩 상태 시작 (즉시 UI 반영)
     const originalApplications = get().applications;
+    
+    // UI 즉시 업데이트 (로딩 상태 없이)
     set(state => ({
-      isLoading: true,
       applications: state.applications.map(app =>
         app.id === applicationId
           ? { ...app, status: newStatus, final_status: newStatus === 'rejected' ? 'rejected' : app.final_status }
@@ -162,7 +144,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       let updatePayload: Partial<Application> = { status: newStatus };
 
       if (newStatus === 'rejected') {
-        updatePayload = { final_status: 'rejected', status: 'rejected' }; // status도 함께 업데이트하여 일관성 유지
+        updatePayload = { final_status: 'rejected', status: 'rejected' };
       }
 
       const { data: updatedApplication, error: updateError } = await supabase
@@ -174,76 +156,56 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       
       if (updateError) throw updateError;
       
-      // DB의 최종 결과로 상태를 다시 한번 업데이트하여 정합성 보장
+      // DB의 최종 결과로 상태를 업데이트
       set(state => ({
         applications: state.applications.map(app => 
           app.id === updatedApplication.id ? updatedApplication : app
         ),
       }));
 
-      // 'rejected'가 아닌 경우에만 이메일 발송
+      // 이메일 발송을 백그라운드로 처리 (UI 블로킹 없음)
       if (newStatus !== 'rejected') {
-        const { data: application, error: fetchError } = await supabase
-          .from('applications')
-          .select('id, name, email, jobs:job_id(title, department)')
-          .eq('id', applicationId)
-          .single();
-        if (fetchError || !application) throw new Error('지원자 정보 조회 실패');
+        // 백그라운드에서 이메일 발송
+        (async () => {
+          try {
+            const { data: application, error: fetchError } = await supabase
+              .from('applications')
+              .select('id, name, email, jobs:job_id(title, department)')
+              .eq('id', applicationId)
+              .single();
+            
+            if (fetchError || !application) {
+              console.error('이메일 발송용 지원자 정보 조회 실패:', fetchError);
+              return;
+            }
 
-        await supabase.functions.invoke('send-status-change-email', {
-          body: {
-            applicantName: application.name,
-            applicantEmail: application.email,
-            jobTitle: (application.jobs as any)?.title || '',
-            company: '무신사',
-            newStatus,
-            applicationId,
-            interviewDetails: interviewSettings,
-          },
-        });
+            await supabase.functions.invoke('send-status-change-email', {
+              body: {
+                applicantName: application.name,
+                applicantEmail: application.email,
+                jobTitle: (application.jobs as any)?.title || '',
+                company: '무신사',
+                newStatus,
+                applicationId,
+                interviewDetails: interviewSettings,
+              },
+            });
+          } catch (emailError) {
+            console.error('백그라운드 이메일 발송 실패:', emailError);
+            // 이메일 발송 실패는 UI에 영향을 주지 않음
+          }
+        })();
       }
     } catch (error) {
       console.error('상태 변경 실패, 원래 상태로 롤백:', error);
-      set({ applications: originalApplications }); // 에러 발생 시 원래 상태로 롤백
+      set({ applications: originalApplications });
       throw error;
-    } finally {
-      set({ isLoading: false }); // 성공/실패 여부와 관계없이 로딩 상태 종료
     }
   },
 
-  // 🎨 상태 텍스트 변환
-  getStatusText: (status: ApplicationStatus): string => {
-    const statusMap: Record<ApplicationStatus, string> = {
-      'submitted': '지원 접수',
-      'interview': '면접 진행',
-      'accepted': '입사 제안',
-      'rejected': '불합격'
-    };
-    return statusMap[status] || status;
-  },
 
-  // 🎨 상태 색상 클래스
-  getStatusColor: (status: ApplicationStatus): string => {
-    const colors: Record<ApplicationStatus, string> = {
-      'submitted': 'bg-blue-100 text-blue-700 border-blue-200',
-      'interview': 'bg-purple-100 text-purple-700 border-purple-200',
-      'accepted': 'bg-green-100 text-green-700 border-green-200',
-      'rejected': 'bg-red-100 text-red-700 border-red-200'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
-  },
 
-  // 🧹 스토어 초기화
-  reset: () => {
-    set({
-      jobs: [],
-      applications: [],
-      selectedJobId: null,
-      isLoading: false,
-      error: null,
-      sortOption: 'latest',
-    });
-  },
+
 
   // 평가 등록 시 대시보드 데이터를 실시간으로 업데이트하는 함수
   updateApplicationEvaluation: (applicationId, userId, newScore) => {
