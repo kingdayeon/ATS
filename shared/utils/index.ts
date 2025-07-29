@@ -31,8 +31,7 @@ export const generateInterviewToken = (applicationId: number): string => {
   // 실제로는 더 복잡한 JWT 토큰을 사용해야 하지만, 
   // 간단한 인코딩된 토큰으로 임시 구현
   const timestamp = Date.now();
-  const randomStr = Math.random().toString(36).substring(2, 15);
-  const payload = `${applicationId}-${timestamp}-${randomStr}`;
+  const payload = `${applicationId}-${timestamp}-${Math.random().toString(36).substring(2, 15)}`;
   
   // Base64 인코딩 (실제로는 JWT 사용 권장)
   return btoa(payload).replace(/[+/=]/g, m => {

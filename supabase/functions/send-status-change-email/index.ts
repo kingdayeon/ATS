@@ -461,7 +461,8 @@ serve(async (req) => {
         // 면접 일정 선택 링크 생성
         addLog('🔗 STEP 5: 면접 일정 선택 링크 생성...');
         const interviewToken = generateInterviewToken(applicationId);
-        schedulingUrl = `http://localhost:5175/interview-scheduling/${applicationId}/${interviewToken}`;
+        const frontendUrl = Deno.env.get('FRONTEND_URL') || 'http://localhost:5175';
+        schedulingUrl = `${frontendUrl}/interview-scheduling/${applicationId}/${interviewToken}`;
         addLog(`✅ 면접 일정 링크: ${schedulingUrl}`);
 
         emailSubject = `[${company}] 면접 일정 안내 - ${jobTitle}`;
@@ -568,8 +569,8 @@ serve(async (req) => {
         
         const secretKey = Deno.env.get("FUNCTION_SECRET_KEY") ?? "default-secret";
         const token = generateToken(String(applicationId), secretKey);
-        // ✨ 프론트엔드 URL 포트 번호 수정
-        const frontendUrl = 'http://localhost:5175'; // 5174 -> 5175
+        // ✨ 프론트엔드 URL 환경변수로 수정
+        const frontendUrl = Deno.env.get('FRONTEND_URL') || 'http://localhost:5175';
 
         const acceptUrl = `${frontendUrl}/finalize-status/${applicationId}/hired/${token}`;
         const declineUrl = `${frontendUrl}/finalize-status/${applicationId}/offer_declined/${token}`;
@@ -734,7 +735,7 @@ serve(async (req) => {
                 type: "plain_text",
                 text: "📄 지원서 보기"
               },
-              url: `http://localhost:5175/application/${applicationId}`,
+              url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5175'}/application/${applicationId}`,
               style: "primary"
             }
           ]

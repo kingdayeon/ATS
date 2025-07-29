@@ -1,4 +1,4 @@
-import type { CompanyType, ReferralSource, ApplicationStatus, FinalStatus } from '../types';
+import type { CompanyType, ReferralSource } from '../types';
 
 // ===== COMPANY CONSTANTS =====
 export const COMPANIES: CompanyType[] = [

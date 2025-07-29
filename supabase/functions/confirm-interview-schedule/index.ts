@@ -137,7 +137,7 @@ const sendSlackNotification = async (jobTitle: string, applicantName: string, st
           { type: 'mrkdwn', text: `*면접 시간:*\n${formattedTime}` },
       ]},
       { type: 'actions', elements: [
-          { type: 'button', text: { type: 'plain_text', text: '📄 지원서 보기' }, url: `http://localhost:5175/application/${applicationId}` },
+          { type: 'button', text: { type: 'plain_text', text: '📄 지원서 보기' }, url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5175'}/application/${applicationId}` },
       ]},
     ],
   };
@@ -206,7 +206,7 @@ serve(async (req: Request) => {
     const accessToken = await getGoogleAccessToken(supabase); // ✨ supabase 클라이언트를 인자로 전달
     const event = {
       summary: `${(appData.jobs as any).title} 면접: ${appData.name}님`,
-      description: `지원자 상세 페이지: http://localhost:5175/application/${applicationId}`, // 포트 및 주소는 환경에 맞게 조정 필요
+      description: `지원자 상세 페이지: ${Deno.env.get('FRONTEND_URL') || 'http://localhost:5175'}/application/${applicationId}`, // 포트 및 주소는 환경에 맞게 조정 필요
       start: { dateTime: startTime, timeZone: 'Asia/Seoul' },
       end: { dateTime: endTime, timeZone: 'Asia/Seoul' },
       attendees: interviewers.map((i: any) => ({ email: i.email })),

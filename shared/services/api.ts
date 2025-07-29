@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Job, Application, ApplicationWithJob, CompanyType, ExperienceLevel, JobType, Database } from '../types';
+import type { Job, ApplicationWithJob, CompanyType, ExperienceLevel, JobType, Database } from '../types';
 
 type JobRow = Database['public']['Tables']['jobs']['Row'];
 

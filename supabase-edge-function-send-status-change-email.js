@@ -38,7 +38,8 @@ serve(async (req) => {
     if (newStatus === 'interview') {
       // 🎯 면접 진행 상태 - 일정 선택 링크 포함
       const interviewToken = generateInterviewToken(applicationId);
-      const schedulingUrl = `http://localhost:5175/interview-scheduling/${applicationId}/${interviewToken}`;
+              const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5175';
+        const schedulingUrl = `${frontendUrl}/interview-scheduling/${applicationId}/${interviewToken}`;
       
       emailSubject = `[${company}] 면접 일정 안내 - ${jobTitle}`
       emailContent = `
@@ -235,7 +236,7 @@ serve(async (req) => {
                 type: "plain_text",
                 text: "📋 지원서 보기"
               },
-              url: `http://localhost:5175/application/${applicationId}`,
+              url: `${process.env.FRONTEND_URL || 'http://localhost:5175'}/application/${applicationId}`,
               style: "primary"
             }
           ]
@@ -259,7 +260,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: '상태 변경 이메일 및 Slack 알림 발송 완료',
-        schedulingUrl: newStatus === 'interview' ? `http://localhost:5175/interview-scheduling/${applicationId}/${generateInterviewToken(applicationId)}` : undefined
+        schedulingUrl: newStatus === 'interview' ? `${process.env.FRONTEND_URL || 'http://localhost:5175'}/interview-scheduling/${applicationId}/${generateInterviewToken(applicationId)}` : undefined
       }),
       { 
         headers: { 
