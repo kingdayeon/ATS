@@ -1,5 +1,3 @@
-import { DEPARTMENT_COLORS, STATUS_COLORS, AVATAR_COLORS } from '../constants';
-
 export const getAvatarColor = (name: string): string => {
   if (!name || typeof name !== 'string') return 'bg-gray-500';
   
@@ -45,7 +43,7 @@ export const validateInterviewToken = (token: string, applicationId: number): bo
     // URL-safe base64 디코딩
     const normalizedToken = token.replace(/[-_]/g, m => m === '-' ? '+' : '/');
     const decoded = atob(normalizedToken);
-    const [tokenAppId, timestamp, randomStr] = decoded.split('-');
+    const [tokenAppId, timestamp] = decoded.split('-');
     
     if (parseInt(tokenAppId) !== applicationId) {
       return false;
