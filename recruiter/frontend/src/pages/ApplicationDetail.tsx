@@ -10,6 +10,7 @@ import { supabase } from '../../../../shared/lib/supabase';
 import ApplicationHeader from '../components/application/ApplicationHeader';
 import ApplicationInfo from '../components/application/ApplicationInfo';
 import StatusManagement from '../components/application/StatusManagement';
+import EvaluationSection from '../components/application/EvaluationSection'; // 평가 섹션 import
 import PDFViewer from '../components/application/PDFViewer';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorDisplay from '../components/common/ErrorDisplay';
@@ -159,6 +160,8 @@ const ApplicationDetail = () => {
     );
   }
 
+  const showEvaluation = application && (application.status === 'submitted' || application.status === 'interview');
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* 헤더 */}
@@ -167,30 +170,31 @@ const ApplicationDetail = () => {
       </div>
 
       {/* 메인 컨텐츠 그리드 (flex-grow로 남은 공간 채우기) */}
-      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
-        
-        {/* 왼쪽 컬럼 (독립적인 스크롤) */}
-        <div className="xl:col-span-1 space-y-6 overflow-y-auto">
-          <ApplicationInfo
-            application={application}
-            job={job}
-            getStatusText={getStatusText}
-            getStatusColor={getStatusColor}
-          />
-          <StatusManagement
-            currentStatus={application.status}
-            onStatusChange={handleStatusChange}
-            applicationId={application.id}
-            applicantName={application.name}
-            department={job.department}
-          />
-        </div>
+      <main className="flex-1 min-h-0">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 h-full flex gap-6 xl:gap-8">
+          
+          {/* 왼쪽 컬럼 (정보 + 평가) */}
+          <div className="w-full max-w-sm flex-shrink-0 space-y-6">
+            <ApplicationInfo
+              application={application}
+              job={job}
+            />
+            <StatusManagement
+              currentStatus={application.status}
+              onStatusChange={handleStatusChange}
+              applicationId={application.id}
+              applicantName={application.name}
+              department={job.department}
+            />
+            {showEvaluation && <EvaluationSection />}
+          </div>
 
-        {/* 오른쪽 컬럼 (독립적인 스크롤) */}
-        <div className="xl:col-span-2 overflow-y-auto rounded-lg">
-          <PDFViewer application={application} />
+          {/* 오른쪽 컬럼 (PDF 뷰어) */}
+          <div className="flex-1 min-w-0">
+            <PDFViewer application={application} />
+          </div>
+          
         </div>
-        
       </main>
     </div>
   );

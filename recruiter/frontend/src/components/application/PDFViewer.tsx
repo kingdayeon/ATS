@@ -48,10 +48,9 @@ const PDFViewer = ({ application }: PDFViewerProps) => {
   };
 
   return (
-    // h-full과 flex-col 제거하여 높이 제한 해제
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full flex flex-col">
       {/* 탭 헤더 */}
-      <div className="border-b border-gray-200 bg-gray-50">
+      <div className="border-b border-gray-200 bg-gray-50 flex-shrink-0">
         <div className="flex">
           <button
             onClick={() => setActiveTab('resume')}
@@ -76,14 +75,14 @@ const PDFViewer = ({ application }: PDFViewerProps) => {
         </div>
       </div>
 
-      {/* 컨텐츠 영역 (flex-1과 overflow-y-auto 제거하여 내부 스크롤 비활성화) */}
-      <div>
+      {/* 컨텐츠 영역 (내부 스크롤 활성화) */}
+      <div className="flex-1 overflow-y-auto">
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
           {activeTab === 'resume' &&
             (application.resume_file_url ? (
               <Viewer fileUrl={application.resume_file_url} defaultScale={SpecialZoomLevel.PageWidth} />
             ) : (
-              <div className="flex items-center justify-center text-gray-500 p-12">
+              <div className="h-full flex items-center justify-center text-gray-500">
                 <p>이력서가 없습니다.</p>
               </div>
             ))}
