@@ -92,9 +92,12 @@ const JobApplication = () => {
     // 이미 제출 중이면 중복 실행 방지
     if (isSubmitting) return;
     
-    if (!validateForm()) return;
-
-    setIsSubmitting(true); // 제출 시작
+    setIsSubmitting(true); // 먼저 버튼 비활성화
+    
+    if (!validateForm()) {
+      setIsSubmitting(false); // validation 실패 시 다시 활성화
+      return;
+    }
 
     try {
       const jobId = parseInt(id || "1");
@@ -154,6 +157,8 @@ const JobApplication = () => {
         }
         
         setIsSubmitted(true);
+        // 성공하면 setIsSubmitting(false)를 실행하지 않음 (중복 제출 방지)
+        return;
       } else {
         alert(`지원서 제출에 실패했습니다: ${result.error}`);
       }
@@ -161,7 +166,8 @@ const JobApplication = () => {
       console.error("Failed to submit application:", error);
       alert("지원서 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
-      setIsSubmitting(false); // 제출 완료 (성공/실패 관계없이)
+      // 실패한 경우에만 다시 시도할 수 있도록 버튼 활성화
+      setIsSubmitting(false);
     }
   };
 
