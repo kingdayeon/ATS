@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,6 +19,7 @@ const JobApplication = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get job details using custom hook
   const job = useJob();
@@ -88,7 +89,12 @@ const JobApplication = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // 이미 제출 중이면 중복 실행 방지
+    if (isSubmitting) return;
+    
     if (!validateForm()) return;
+
+    setIsSubmitting(true); // 제출 시작
 
     try {
       const jobId = parseInt(id || "1");
@@ -154,6 +160,8 @@ const JobApplication = () => {
     } catch (error) {
       console.error("Failed to submit application:", error);
       alert("지원서 제출 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false); // 제출 완료 (성공/실패 관계없이)
     }
   };
 
@@ -424,9 +432,16 @@ const JobApplication = () => {
             <Button
               type="submit"
               className="w-full max-w-md px-12 py-4 bg-black text-white hover:bg-gray-800 text-lg"
-              disabled={!formData.requiredConsent}
+              disabled={!formData.requiredConsent || isSubmitting}
             >
-              제출하기
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  제출 중...
+                </>
+              ) : (
+                "제출하기"
+              )}
             </Button>
           </div>
         </form>

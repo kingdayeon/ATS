@@ -16,6 +16,21 @@ export const submitApplication = async (
   formData: ApplicationFormData
 ): Promise<{ success: boolean; applicationId?: number; error?: string }> => {
   try {
+    // 중복 지원 체크 (같은 이메일로 같은 job_id에 지원했는지 확인)
+    const { data: existingApplication } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('job_id', jobId)
+      .eq('email', formData.email)
+      .single()
+
+    if (existingApplication) {
+      return { 
+        success: false, 
+        error: '이미 해당 공고에 지원하셨습니다.' 
+      }
+    }
+
     // ApplicationFormData를 DB Insert 타입으로 변환
     const applicationData: ApplicationInsert = {
       job_id: jobId,
