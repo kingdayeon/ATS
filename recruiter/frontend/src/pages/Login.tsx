@@ -125,12 +125,7 @@ const Login = () => {
                   </div>
                 ))}
                 
-                {/* 구글 비밀번호 힌트 */}
-                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-medium">구글 비밀번호:</span> musinsa_assignment
-                  </p>
-                </div>
+
               </div>
             </div>
           </div>
