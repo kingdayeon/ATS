@@ -2,11 +2,11 @@ import type { CompanyType, ReferralSource } from '../types';
 
 // ===== COMPANY CONSTANTS =====
 export const COMPANIES: CompanyType[] = [
-  "29CM",
-  "무신사", 
-  "무신사 스탠다드",
-  "무신사 로지스틱스",
-  "무신사 페이먼츠"
+  "DATS Fashion",
+  "DATS Main", 
+  "DATS Standard",
+  "DATS Logistics",
+  "DATS Payments"
 ];
 
 // ===== DEPARTMENT CONSTANTS =====
@@ -33,8 +33,8 @@ export const DEPARTMENTS = [
 
 // ===== REFERRAL SOURCE CONSTANTS =====
 export const REFERRAL_OPTIONS: ReferralSource[] = [
-  "무신사 채용팀",
-  "무신사 채용 홈페이지",
+  "DATS 채용팀",
+  "DATS 채용 홈페이지",
   "지인 추천", 
   "링크드인",
   "원티드",

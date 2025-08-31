@@ -147,7 +147,7 @@ const JobApplication = () => {
             applicantName: formData.name,
             applicantEmail: formData.email,
             jobTitle: job?.title || '',
-            company: job?.company || '무신사',
+            company: job?.company || 'DATS Main',
             applicationId: result.applicationId
           });
           console.log("✅ 이메일 발송 완료!");

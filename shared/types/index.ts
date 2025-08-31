@@ -1,7 +1,7 @@
 // ===== COMMON ENUM TYPES =====
 export type JobType = "정규직" | "계약직" | "인턴" | "파트타임";
 export type ExperienceLevel = "신입" | "경력 1년 이상" | "경력 3년 이상" | "경력 5년 이상" | "경력 7년 이상" | "경력 8년 이상" | "경력 10년 이상";
-export type CompanyType = "29CM" | "무신사" | "무신사 스탠다드" | "무신사 로지스틱스" | "무신사 페이먼츠";
+export type CompanyType = "DATS Fashion" | "DATS Main" | "DATS Standard" | "DATS Logistics" | "DATS Payments";
 export type PortfolioType = "file" | "link";
 export type UserRole = 'admin' | 'manager' | 'viewer';
 export type ApplicationStatus = 'submitted' | 'interview' | 'accepted' | 'rejected';
@@ -9,8 +9,8 @@ export type ApplicationStatus = 'submitted' | 'interview' | 'accepted' | 'reject
 export type FinalStatus = 'pending' | 'hired' | 'offer_declined' | 'rejected';
 
 export type ReferralSource = 
-  | "무신사 채용팀"
-  | "무신사 채용 홈페이지" 
+  | "DATS 채용팀"
+  | "DATS 채용 홈페이지" 
   | "지인 추천"
   | "링크드인"
   | "원티드"
@@ -74,7 +74,7 @@ export interface Application {
   updated_at: string;
   jobs?: { title: string; department: string; }; // jobs 필드 추가
 
-  // DB 함수로부터 추가되는 평가 정보 (선택적)
+  // DB 함수로부터 추가되는 평가 정보
   // 서류 평가
   document_average_score?: number;
   document_evaluation_count?: number;

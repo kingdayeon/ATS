@@ -37,7 +37,7 @@ const InterviewScheduled = () => {
           <div className="w-6 h-6 bg-black rounded flex items-center justify-center">
             <span className="text-white font-bold text-xs">M</span>
           </div>
-          <span className="text-sm">무신사 ATS</span>
+          <span className="text-sm">DATS ATS</span>
         </div>
       </div>
     </div>

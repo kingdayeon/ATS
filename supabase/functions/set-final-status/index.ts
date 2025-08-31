@@ -36,7 +36,7 @@ serve(async (req)=>{
     }).eq("id", applicationId);
     if (error) throw error;
     const isSuccess = finalStatus === 'hired';
-    const message = isSuccess ? '입사 결정을 축하드립니다! 무신사 채용팀에서 곧 상세 안내를 드릴 예정입니다.' : '입사 포기 의사가 정상적으로 전달되었습니다. 귀하의 결정을 존중하며, 앞날에 좋은 일이 가득하기를 바랍니다.';
+    const message = isSuccess ? '입사 결정을 축하드립니다! DATS 채용팀에서 곧 상세 안내를 드릴 예정입니다.' : '입사 포기 의사가 정상적으로 전달되었습니다. 귀하의 결정을 존중하며, 앞날에 좋은 일이 가득하기를 바랍니다.';
     return new Response(JSON.stringify({
       success: true,
       message: message

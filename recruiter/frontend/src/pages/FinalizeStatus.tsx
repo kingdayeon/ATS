@@ -50,7 +50,7 @@ const FinalizeStatus = () => {
           <ErrorDisplay 
             message={result?.message || '오류가 발생했습니다.'} 
             retryText="홈페이지로 이동"
-            onRetry={() => window.location.href = 'https://www.musinsa.com/app/careers/hr'} // 무신사 채용 홈페이지
+            onRetry={() => window.location.href = 'https://www.dats.com/app/careers/hr'} // DATS 채용 홈페이지
           />
         )}
       </div>

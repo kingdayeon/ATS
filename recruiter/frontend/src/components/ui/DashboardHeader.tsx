@@ -26,7 +26,7 @@ const DashboardHeader = ({
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">M</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">무신사 ATS</h1>
+              <h1 className="text-xl font-bold text-gray-900">DATS ATS</h1>
             </div>
             <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
               {user.name} · {user.role === 'admin' ? '채용담당자' : user.role === 'manager' ? '팀장' : '팀원'}
@@ -68,7 +68,7 @@ const DashboardHeader = ({
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">M</span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">무신사 ATS</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">DATS ATS</h1>
             </div>
             <button
               onClick={onLogout}

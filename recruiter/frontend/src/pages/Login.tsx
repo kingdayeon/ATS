@@ -50,7 +50,7 @@ const Login = () => {
         <div className="w-full max-w-md">
           {/* 헤더 */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">무신사 ATS</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">DATS ATS</h1>
             <p className="text-gray-600 text-lg">채용 관리 시스템</p>
           </div>
 

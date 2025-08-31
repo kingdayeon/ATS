@@ -485,7 +485,7 @@ serve(async (req)=>{
         // ✨ 프론트엔드 URL 환경변수로 수정
         const acceptUrl = `${frontendUrl}/finalize-status/${applicationId}/hired/${token}`;
         const declineUrl = `${frontendUrl}/finalize-status/${applicationId}/offer_declined/${token}`;
-        emailSubject = `[${company}] 무신사 입사 제안 안내`;
+        emailSubject = `[${company}] DATS 입사 제안 안내`;
         emailContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px;">
             <div style="background: #000; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -496,7 +496,7 @@ serve(async (req)=>{
                 안녕하세요 <strong>${applicantName}</strong>님,
               </p>
               <p style="font-size: 16px; line-height: 1.6; color: #333;">
-                무신사 ${jobTitle} 포지션에 최종 합격하신 것을 진심으로 축하드립니다.
+                DATS ${jobTitle} 포지션에 최종 합격하신 것을 진심으로 축하드립니다.
               </p>
               <div style="background: white; border-left: 4px solid #3b82f6; padding: 20px; margin: 30px 0;">
                 <h3 style="margin: 0 0 10px 0; color: #1f2937;">📝 입사 의사 확인</h3>

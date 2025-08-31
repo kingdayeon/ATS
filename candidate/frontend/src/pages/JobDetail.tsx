@@ -28,7 +28,7 @@ const JobDetail = () => {
     { 
       label: "근무지", 
       value: job.location,
-      subValue: "서울특별시 성동구 성수동2가 271-22, 무신사 성수 (E1)"
+              subValue: "서울특별시 성동구 성수동2가 271-22, DATS 성수 (E1)"
     }
   ];
 
